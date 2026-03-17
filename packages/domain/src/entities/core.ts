@@ -1,4 +1,4 @@
-export type WorkbookKind = "premiums" | "financialPosition" | "reference";
+export type WorkbookKind = "premiums" | "financialPosition" | "incomeStatement" | "reference" | "unknown";
 
 export type ValidationSeverity = "critical" | "high" | "medium" | "low";
 
@@ -7,7 +7,15 @@ export type ValidationStatus = "passed" | "warning" | "failed";
 export type DatasetStatus = "staged" | "published" | "failed" | "rolledBack";
 
 export type Publishability = "publishable" | "blocked" | "warningOnly";
-export type DatasetScope = "premiums-only" | "financial-only" | "combined" | "empty";
+export type DatasetScope =
+  | "premiums-only"
+  | "financial-only"
+  | "income-statement-only"
+  | "premiums-financial"
+  | "premiums-income-statement"
+  | "financial-income-statement"
+  | "full-core"
+  | "empty";
 
 export interface BusinessPeriod {
   reportDate: string;
@@ -64,6 +72,7 @@ export interface ReconciliationSummary {
 
 export interface DatasetVersionRecord {
   datasetVersionId: string;
+  ingestionRunId: string | null;
   status: DatasetStatus;
   createdAt: string;
   publishedAt: string | null;
@@ -72,6 +81,7 @@ export interface DatasetVersionRecord {
   businessPeriods: {
     premiums: BusinessPeriod | undefined;
     financialPosition: BusinessPeriod | undefined;
+    incomeStatement: BusinessPeriod | undefined;
     reference: BusinessPeriod | undefined;
   };
   datasetScope: DatasetScope;

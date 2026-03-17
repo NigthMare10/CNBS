@@ -13,6 +13,19 @@ import type {
 } from "../entities/canonical";
 import { normalizeText } from "./text";
 
+function normalizeInstitutionAlias(value: string): string {
+  return normalizeText(value)
+    .replace(/[.,]/g, " ")
+    .replace(/\bSOCIEDAD ANONIMA\b/g, " ")
+    .replace(/\bS A\b/g, " ")
+    .replace(/\bS\.A\b/g, " ")
+    .replace(/\bSA\b/g, " ")
+    .replace(/\bCIA\b/g, "COMPANIA")
+    .replace(/\bCOMPAÑIA\b/g, "COMPANIA")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function byAlias<T extends { alias: string }>(
   aliases: T[],
   value: string,
@@ -25,7 +38,13 @@ function byAlias<T extends { alias: string }>(
 }
 
 export function resolveInstitution(value: string): Institution | null {
-  const institutionId = byAlias(institutionAliases, value, "institutionId");
+  const institutionId =
+    byAlias(institutionAliases, value, "institutionId") ??
+    institutionAliases.find((entry) => normalizeInstitutionAlias(entry.alias) === normalizeInstitutionAlias(value))
+      ?.institutionId ??
+    institutionsCatalog.find((item) => normalizeInstitutionAlias(item.canonicalName) === normalizeInstitutionAlias(value))
+      ?.institutionId ??
+    null;
 
   return institutionsCatalog.find((item) => item.institutionId === institutionId) ?? null;
 }

@@ -1,16 +1,14 @@
 import { financialPositionRowSchema } from "@cnbs/schemas";
-import type { ParsedFinancialPositionRow } from "../types";
+import type { ParsedIncomeStatementRow } from "../types";
 import { findWorksheetByHeaders, readWorkbook, worksheetToRecords } from "./excel";
 import { tabularFinancialHeaderConfig } from "../workbooks/signatures";
 
-export async function parseFinancialPositionWorkbook(
-  filePath: string
-): Promise<ParsedFinancialPositionRow[]> {
+export async function parseIncomeStatementWorkbook(filePath: string): Promise<ParsedIncomeStatementRow[]> {
   const workbook = await readWorkbook(filePath);
   const worksheet = findWorksheetByHeaders(workbook, tabularFinancialHeaderConfig);
 
   if (!worksheet) {
-    throw new Error("Financial position workbook does not expose a recognizable tabular sheet.");
+    throw new Error("Income statement workbook does not expose a recognizable tabular sheet.");
   }
 
   return worksheetToRecords(worksheet, { aliases: tabularFinancialHeaderConfig.aliases }).map((record) => {
@@ -26,6 +24,6 @@ export async function parseFinancialPositionWorkbook(
       accountRaw: parsed.Cuenta,
       amountNationalRaw: parsed.MonedaNacional,
       amountForeignRaw: parsed.MonedaExtranjera
-    } satisfies ParsedFinancialPositionRow;
+    } satisfies ParsedIncomeStatementRow;
   });
 }

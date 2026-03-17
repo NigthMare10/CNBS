@@ -1,4 +1,29 @@
 import ExcelJS from "exceljs";
+import { normalizeText } from "@cnbs/domain";
+
+export interface HeaderAliasConfig {
+  requiredColumns: string[];
+  aliases: Record<string, string[]>;
+  preferredSheetNames?: string[];
+}
+
+function normalizeKey(value: string): string {
+  return normalizeText(value)
+    .replace(/[.,;:()\-_/]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function buildAliasIndex(aliases: Record<string, string[]>) {
+  const index = new Map<string, string>();
+  for (const [canonical, values] of Object.entries(aliases)) {
+    index.set(normalizeKey(canonical), canonical);
+    for (const value of values) {
+      index.set(normalizeKey(value), canonical);
+    }
+  }
+  return index;
+}
 
 function cellValueToText(value: ExcelJS.CellValue): string {
   if (value == null) {
@@ -31,10 +56,56 @@ export async function readWorkbook(filePath: string): Promise<ExcelJS.Workbook> 
   return workbook;
 }
 
-export function worksheetToRecords(worksheet: ExcelJS.Worksheet): Array<Record<string, unknown>> {
+export function sheetNameMatches(sheetName: string, expectedNames: string[]): boolean {
+  const normalized = normalizeKey(sheetName);
+  return expectedNames.some((expected) => normalized.includes(normalizeKey(expected)));
+}
+
+export function canonicalHeadersForWorksheet(
+  worksheet: ExcelJS.Worksheet,
+  config: HeaderAliasConfig
+): { headers: string[]; canonicalHeaders: string[] } {
   const headerRow = worksheet.getRow(1);
   const rawValues = Array.isArray(headerRow.values) ? headerRow.values.slice(1) : [];
   const headers = rawValues.map((value: ExcelJS.CellValue) => cellValueToText(value).trim());
+  const aliasIndex = buildAliasIndex(config.aliases);
+  const canonicalHeaders = headers.map((header) => aliasIndex.get(normalizeKey(header)) ?? header);
+
+  return { headers, canonicalHeaders };
+}
+
+export function findWorksheetByHeaders(
+  workbook: ExcelJS.Workbook,
+  config: HeaderAliasConfig
+): ExcelJS.Worksheet | null {
+  const preferred = config.preferredSheetNames ?? [];
+  const worksheets = [...workbook.worksheets].sort((left, right) => {
+    const leftPreferred = preferred.length > 0 && sheetNameMatches(left.name, preferred);
+    const rightPreferred = preferred.length > 0 && sheetNameMatches(right.name, preferred);
+    return Number(rightPreferred) - Number(leftPreferred);
+  });
+
+  for (const worksheet of worksheets) {
+    const { canonicalHeaders } = canonicalHeadersForWorksheet(worksheet, config);
+    const headerSet = new Set(canonicalHeaders);
+    const allRequired = config.requiredColumns.every((column) => headerSet.has(column));
+    if (allRequired) {
+      return worksheet;
+    }
+  }
+
+  return null;
+}
+
+export function worksheetToRecords(
+  worksheet: ExcelJS.Worksheet,
+  config?: Pick<HeaderAliasConfig, "aliases">
+): Array<Record<string, unknown>> {
+  const headerRow = worksheet.getRow(1);
+  const rawValues = Array.isArray(headerRow.values) ? headerRow.values.slice(1) : [];
+  const headers = rawValues.map((value: ExcelJS.CellValue) => cellValueToText(value).trim());
+  const aliasIndex = config ? buildAliasIndex(config.aliases) : null;
+  const effectiveHeaders = headers.map((header) => aliasIndex?.get(normalizeKey(header)) ?? header);
   const records: Array<Record<string, unknown>> = [];
 
   worksheet.eachRow((row, rowNumber) => {
@@ -44,7 +115,7 @@ export function worksheetToRecords(worksheet: ExcelJS.Worksheet): Array<Record<s
 
     const record: Record<string, unknown> = { __rowNumber: rowNumber };
 
-    headers.forEach((header: string, index: number) => {
+    effectiveHeaders.forEach((header: string, index: number) => {
       if (!header) {
         return;
       }

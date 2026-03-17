@@ -1,5 +1,6 @@
 import { Card, SectionHeading } from "@cnbs/ui";
 import { AdminPagination } from "../../../components/admin-pagination";
+import { formatAdminDateTime } from "../../../lib/date-time";
 import { getAdminJson } from "../../../lib/api";
 import { requireAdminSession } from "../../../lib/auth";
 
@@ -13,6 +14,10 @@ function actionCounts(events: Array<Record<string, unknown>>) {
   );
 }
 
+function stringValue(value: unknown, fallback = ""): string {
+  return typeof value === "string" ? value : fallback;
+}
+
 export default async function AuditPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const session = await requireAdminSession();
   const params = await searchParams;
@@ -23,6 +28,9 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
   );
   const events = response.items;
   const counts = actionCounts(events);
+  const systemStatus = await getAdminJson<Record<string, unknown>>("/api/admin/system/status", session);
+  const activeDataset = systemStatus.activeDataset as Record<string, unknown> | undefined;
+  const activeVersionId = typeof activeDataset?.datasetVersionId === "string" ? activeDataset.datasetVersionId : null;
 
   return (
     <div className="admin-page">
@@ -50,9 +58,15 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
               <div key={String(event.auditEventId)} className="admin-list-row">
                 <div className="admin-list-row__content">
                   <span className="admin-list-row__title">{String(event.action)}</span>
-                  <span className="admin-list-row__meta">{String(event.timestamp)}</span>
+                  <span className="admin-list-row__meta">{formatAdminDateTime(stringValue(event.timestamp))}</span>
+                  <span className="admin-list-row__meta">
+                    ingestionRunId: {stringValue(event.ingestionRunId, "n/d")} · datasetVersionId: {stringValue(event.datasetVersionId, "n/d")}
+                  </span>
                 </div>
-                <div className="admin-help">Actor: {String(event.actor)}</div>
+                <div className="admin-actions">
+                  {activeVersionId && stringValue(event.datasetVersionId) === activeVersionId ? <span className="admin-alert--success" style={{ padding: "6px 10px", fontSize: 12 }}>Versión activa</span> : null}
+                  <div className="admin-help">Actor: {String(event.actor)}</div>
+                </div>
               </div>
             ))}
           </div>

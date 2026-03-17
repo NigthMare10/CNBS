@@ -1,4 +1,5 @@
 import { Badge, Card, EmptyState, KeyValueList, SectionHeading } from "@cnbs/ui";
+import { formatPublicDateTime, publicTimeZoneLabel } from "../../lib/date-time";
 import { publicApi } from "../../lib/api";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,12 @@ export default async function VersionPage() {
     (activeDataset?.reconciliationSummary as { issuesCount?: number; publishability?: string } | undefined) ?? {};
   const businessPeriods = (activeDataset?.businessPeriods as Record<string, Record<string, string>> | undefined) ?? {};
   const domainAvailability = (activeDataset?.domainAvailability as Record<string, Record<string, unknown>> | undefined) ?? {};
+  const financialAvailable = domainAvailability.financialPosition?.publishable === true;
+  const premiumsAvailable = domainAvailability.premiums?.publishable === true;
+  const supportedDomains = [
+    premiumsAvailable ? "Primas" : null,
+    financialAvailable ? "Estado de situación financiera" : null
+  ].filter(Boolean).join(" + ");
 
   if (!activeDataset) {
     return (
@@ -40,7 +47,7 @@ export default async function VersionPage() {
               columns={1}
               items={[
                 { key: "publisher", label: "Publicado por", value: stringValue(activeDataset.uploadedBy, "n/d") },
-                { key: "published-at", label: "Fecha de publicación", value: stringValue(activeDataset.publishedAt, "n/d") },
+                { key: "published-at", label: "Fecha de publicación", value: formatPublicDateTime(stringValue(activeDataset.publishedAt, "")) },
                 { key: "fingerprint", label: "Fingerprint", value: stringValue(activeDataset.fingerprint, "n/d") }
               ]}
             />
@@ -68,7 +75,7 @@ export default async function VersionPage() {
               {
                 key: "period-financial",
                 label: "Período balance",
-                value: stringValue(businessPeriods.financialPosition?.reportDate, "n/d")
+                value: stringValue(businessPeriods.financialPosition?.reportDate, financialAvailable ? "n/d" : "Dato no disponible")
               },
               {
                 key: "dataset-scope",
@@ -83,7 +90,9 @@ export default async function VersionPage() {
       <Card title="Cobertura por dominio" subtitle="Transparencia sobre qué dominios quedaron realmente soportados en la publicación activa.">
         <KeyValueList
           columns={2}
-          items={Object.entries(domainAvailability).map(([key, value]) => ({
+          items={Object.entries(domainAvailability)
+            .filter(([key]) => key === "premiums" || key === "financialPosition")
+            .map(([key, value]) => ({
             key,
             label: key,
             value:
@@ -98,6 +107,7 @@ export default async function VersionPage() {
           <p className="meta-note">
             La metadata aquí visible corresponde al dataset actualmente activo. El frontend público consume sus agregados y catálogos ya procesados, sin abrir los Excel originales durante el request.
           </p>
+          <p className="meta-note">Zona horaria mostrada: {publicTimeZoneLabel()}.</p>
           <div className="flow-list">
             <div className="flow-list__item">
               <span>Publicación atómica</span>
@@ -109,7 +119,11 @@ export default async function VersionPage() {
             </div>
             <div className="flow-list__item">
               <span>Fuentes oficiales fase 1</span>
-              <strong style={{ color: "#0f172a" }}>Primas + Balance</strong>
+              <strong style={{ color: "#0f172a" }}>{supportedDomains || "Sin dominios activos"}</strong>
+            </div>
+            <div className="flow-list__item">
+              <span>Fuentes no operativas</span>
+              <strong style={{ color: "#0f172a" }}>Informe preliminar solo como oráculo de fórmulas</strong>
             </div>
           </div>
         </div>

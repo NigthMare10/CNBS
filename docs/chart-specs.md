@@ -54,6 +54,36 @@ Machine-readable version:
 - Runtime support: partial
 - Current runtime behavior: render premiums totals only, with explicit note that claims series is unavailable with current sources
 
+## Additional Supported Runtime Visualizations
+
+### Top Instituciones por Activos
+
+- Domain: financial position
+- Question answered: which institutions concentrate the largest assets in the active publication?
+- Runtime support: fully supported
+
+### Reservas Técnicas por Institución
+
+- Domain: financial position
+- Question answered: which institutions hold the largest reserves in the active publication?
+- Runtime support: fully supported
+
+### Participación de Mercado (Dona)
+
+- Domain: premiums
+- Question answered: how is market share distributed among the leading institutions?
+- Runtime support: fully supported
+
 ## Runtime Rule
 
 The dashboard must never invent or extrapolate unsupported series. If the current operational sources do not support a chart honestly, the UI must render a safe unavailable state and explain which source is missing.
+
+## Additional Preliminary Workbook References
+
+The preliminary workbook also exposes result-oriented sheets that now inform semantic support decisions:
+
+- `1. Utilidad` -> aligns with income statement `netIncome`
+- `2. Ingresos Financieros` -> aligns with income statement `financialIncome`
+- `7.1 Primas Retenidas` -> aligns with income statement `retainedPremiums`
+
+These are now modeled as business references for the `incomeStatement` domain, not as runtime sources.

@@ -1,10 +1,11 @@
 import { financialAccountsCatalog, institutionsCatalog, insuranceLinesCatalog } from "@cnbs/domain";
-import type { ExecutiveKpi, FinancialPositionFact, PremiumFact } from "@cnbs/domain";
+import type { ExecutiveKpi, FinancialPositionFact, IncomeStatementFact, PremiumFact } from "@cnbs/domain";
 import type { CanonicalDatasetArtifacts } from "../types";
 
 export function buildDatasetArtifacts(input: {
   premiumFacts: PremiumFact[];
   financialPositionFacts: FinancialPositionFact[];
+  incomeStatementFacts: IncomeStatementFact[];
   datasetVersionId: string;
 }): CanonicalDatasetArtifacts {
   const institutionNameById = Object.fromEntries(
@@ -16,17 +17,24 @@ export function buildDatasetArtifacts(input: {
   const totalAssets = input.financialPositionFacts
     .filter((fact) => fact.accountId === "total-activos")
     .reduce((sum, fact) => sum + fact.amountCombined, 0);
+  const totalReserves = input.financialPositionFacts
+    .filter((fact) => fact.accountId === "reservas-tecnicas")
+    .reduce((sum, fact) => sum + fact.amountCombined, 0);
 
-  const executiveKpis: ExecutiveKpi[] = [
-    { key: "total-premiums", label: "Primas Totales", value: totalPremiums, unit: "currency" },
-    { key: "total-assets", label: "Activos Totales", value: totalAssets, unit: "currency" },
-    {
-      key: "institutions-covered",
-      label: "Instituciones Cubiertas",
-      value: new Set(input.premiumFacts.map((fact) => fact.institutionId)).size,
-      unit: "count"
-    }
-  ];
+  const executiveKpis: ExecutiveKpi[] = [];
+  if (input.premiumFacts.length > 0) {
+    executiveKpis.push({ key: "total-premiums", label: "Primas Totales", value: totalPremiums, unit: "currency" });
+  }
+  if (input.financialPositionFacts.length > 0) {
+    executiveKpis.push({ key: "total-assets", label: "Activos Totales", value: totalAssets, unit: "currency" });
+    executiveKpis.push({ key: "total-reserves", label: "Reservas Técnicas", value: totalReserves, unit: "currency" });
+  }
+  executiveKpis.push({
+    key: "institutions-covered",
+    label: "Instituciones Cubiertas",
+    value: new Set([...input.premiumFacts, ...input.financialPositionFacts, ...input.incomeStatementFacts].map((fact) => fact.institutionId)).size,
+    unit: "count"
+  });
 
   const premiumsByInstitution = Object.values(
     input.premiumFacts.reduce<Record<string, { institutionId: string; premiumAmount: number }>>((accumulator, fact) => {
@@ -89,17 +97,19 @@ export function buildDatasetArtifacts(input: {
     }))
     .sort((left, right) => right.totalAssets - left.totalAssets);
 
+  const incomeStatementHighlightsByInstitution: Array<Record<string, unknown>> = [];
+
   const financialHighlightsByInstitutionMap = Object.fromEntries(
     financialHighlightsByInstitution.map((entry) => [String(entry.institutionId), entry])
   );
   const premiumsByInstitutionMap = Object.fromEntries(
     premiumsByInstitution.map((entry) => [String(entry.institutionId), entry])
   );
-
   const rankings = {
     premiums: premiumsByInstitution.slice(0, 12),
     assets: [...financialHighlightsByInstitution].sort((left, right) => right.totalAssets - left.totalAssets),
-    equity: [...financialHighlightsByInstitution].sort((left, right) => right.equity - left.equity)
+    equity: [...financialHighlightsByInstitution].sort((left, right) => right.equity - left.equity),
+    reserves: [...financialHighlightsByInstitution].sort((left, right) => right.totalReserves - left.totalReserves)
   };
 
   const institutionDetails = Object.fromEntries(
@@ -140,10 +150,12 @@ export function buildDatasetArtifacts(input: {
     financialAccounts: financialAccountsCatalog,
     premiumFacts: input.premiumFacts,
     financialPositionFacts: input.financialPositionFacts,
+    incomeStatementFacts: [],
     executiveKpis,
     premiumsByInstitution,
     premiumsByLine,
     financialHighlightsByInstitution,
+    incomeStatementHighlightsByInstitution,
     rankings,
     institutionDetails
   };

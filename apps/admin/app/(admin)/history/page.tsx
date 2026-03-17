@@ -1,6 +1,8 @@
 import { Card, SectionHeading } from "@cnbs/ui";
 import { rollbackVersionAction } from "../../actions";
 import { AdminPagination } from "../../../components/admin-pagination";
+import { formatAdminDateTime } from "../../../lib/date-time";
+import { getOperationalLabel } from "../../../lib/traceability";
 import { getAdminJson } from "../../../lib/api";
 import { requireAdminSession } from "../../../lib/auth";
 
@@ -29,8 +31,18 @@ export default async function HistoryPage({ searchParams }: { searchParams: Prom
           <Card
             key={String(version.datasetVersionId)}
             title={String(version.datasetVersionId)}
-            subtitle={String(version.publishedAt ?? version.createdAt)}
+            subtitle={formatAdminDateTime(stringValue(version.publishedAt, stringValue(version.createdAt)))}
           >
+            <div className="admin-meta-item" style={{ marginBottom: 18 }}>
+              <span className="admin-meta-item__label">Etiqueta operativa</span>
+              <span className="admin-meta-item__value">
+                {getOperationalLabel({
+                  datasetScope: version.datasetScope,
+                  businessPeriods: version.businessPeriods,
+                  status: version.status
+                })}
+              </span>
+            </div>
             <div className="admin-meta-row">
               <span className="admin-help">Estado: {stringValue(version.status, "published")}</span>
               <form action={rollbackVersionAction}>

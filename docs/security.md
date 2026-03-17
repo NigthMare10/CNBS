@@ -25,6 +25,7 @@ Primary threats:
 - macro-enabled content rejection
 - sanitized original filename persistence
 - optional reference workbook allowed, but not required
+- safe separation between security rejection and functional classification rejection
 
 ### Parsing Security
 
@@ -67,6 +68,12 @@ Primary threats:
 - missing one primary source is handled as controlled warning, not as unsafe implicit default
 - runtime never fabricates unsupported claims or income statement values
 - reference workbook is treated as optional non-authoritative input and cannot force publication of unsupported business facts
+
+## Classification Safety Notes
+
+- filenames are not trusted for business interpretation
+- unknown or low-confidence workbooks are rejected as unclassified, not misclassified
+- safe multipart filtering removes empty placeholders and `blob` phantom uploads before ingestion
 
 ## Error Handling Policy
 

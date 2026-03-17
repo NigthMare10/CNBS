@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { Badge, Card, EmptyState, KeyValueList, MetricGrid, SectionHeading } from "@cnbs/ui";
 import { LazyBarChart } from "../components/lazy-bar-chart";
+import { LazyDonutChart } from "../components/lazy-donut-chart";
+import { getHomeHeroCopy } from "../lib/dataset-narrative";
 import { publicApi } from "../lib/api";
 
 export const dynamic = "force-dynamic";
@@ -31,8 +33,12 @@ export default async function HomePage() {
   );
   const financialPeriod = stringValue(
     (metadata?.businessPeriods as Record<string, Record<string, string>> | undefined)?.financialPosition?.reportDate,
-    "n/d"
+    financialAvailable ? "n/d" : "Dato no disponible"
   );
+  const heroCopy = getHomeHeroCopy({
+    datasetScope: stringValue(metadata?.datasetScope, "empty"),
+    domainAvailability
+  });
 
   return (
     <div style={{ display: "grid", gap: 40 }}>
@@ -40,11 +46,8 @@ export default async function HomePage() {
         <div className="hero-panel__grid">
           <div>
             <p className="hero-panel__eyebrow">Vista Ejecutiva</p>
-            <h2 className="hero-panel__title">Publicación institucional validada, versionada y preparada para alto tráfico.</h2>
-            <p className="hero-panel__copy">
-              El runtime público consume solo datasets canónicos publicados. La carga administrativa permanece aislada y la
-              versión activa se mantiene aunque falle una nueva ingesta.
-            </p>
+            <h2 className="hero-panel__title">{heroCopy.title}</h2>
+            <p className="hero-panel__copy">{heroCopy.description}</p>
           </div>
           <Card title="Estado de la versión" subtitle="Versión activa utilizada por el runtime público.">
             <div style={{ display: "grid", gap: 16 }}>
@@ -78,6 +81,8 @@ export default async function HomePage() {
               ? "Total oficial derivado de la última versión publicada."
               : String(item.key) === "total-assets"
                 ? "Suma consolidada del estado de situación financiera publicado."
+                : String(item.key) === "total-reserves"
+                  ? "Reserva técnica agregada desde el estado de situación financiera publicado."
                 : "Cobertura efectiva de la versión institucional activa."
         }))}
       />
@@ -182,11 +187,100 @@ export default async function HomePage() {
         </Card>
       </section>
 
+      <section className="page-grid-2">
+        <Card>
+          <SectionHeading
+            eyebrow="Balance"
+            title="Top instituciones por activos"
+            description="Comparativo derivado del estado de situación financiera cuando ese dominio está disponible."
+          />
+          <div style={{ marginTop: 20 }}>
+            {financialAvailable && financialHighlights.length > 0 ? (
+              <LazyBarChart
+                title="Activos por institución"
+                color="#14532d"
+                data={financialHighlights.slice(0, 8).map((item) => ({
+                  label: stringValue(item.institutionName),
+                  value: Number(item.totalAssets ?? 0)
+                }))}
+              />
+            ) : (
+              <EmptyState title="Dato no disponible" description="Este gráfico requiere el estado de situación financiera en la publicación activa." />
+            )}
+          </div>
+        </Card>
+
+        <Card>
+          <SectionHeading
+            eyebrow="Balance"
+            title="Reservas técnicas por institución"
+            description="Permite identificar concentración de reservas dentro del sistema publicado."
+          />
+          <div style={{ marginTop: 20 }}>
+            {financialAvailable && financialHighlights.length > 0 ? (
+              <LazyBarChart
+                title="Reservas técnicas"
+                color="#7c2d12"
+                data={financialHighlights.slice(0, 8).map((item) => ({
+                  label: stringValue(item.institutionName),
+                  value: Number(item.totalReserves ?? 0)
+                }))}
+              />
+            ) : (
+              <EmptyState title="Dato no disponible" description="Este gráfico requiere el dominio de balance en la versión activa." />
+            )}
+          </div>
+        </Card>
+
+        <Card>
+          <SectionHeading
+            eyebrow="Mercado"
+            title="Participación de mercado"
+            description="Distribución relativa de primas por institución dentro de la publicación activa."
+          />
+          <div style={{ marginTop: 20 }}>
+            {premiumsAvailable && premiumsByInstitution.length > 0 ? (
+              <LazyDonutChart
+                title="Participación de mercado"
+                data={premiumsByInstitution.slice(0, 8).map((item) => ({
+                  label: stringValue(item.institutionName),
+                  value: Number(item.premiumAmount ?? 0)
+                }))}
+              />
+            ) : (
+              <EmptyState title="Dato no disponible" description="La participación de mercado requiere el dominio de primas en la versión activa." />
+            )}
+          </div>
+        </Card>
+
+        <Card>
+          <SectionHeading
+            eyebrow="Cobertura"
+            title="Dominios cargados en la publicación"
+            description="Vista rápida de qué dominios están realmente disponibles en esta versión."
+          />
+          <div style={{ marginTop: 20 }}>
+            <KeyValueList
+              columns={1}
+              items={Object.entries(domainAvailability)
+                .filter(([key]) => key === "premiums" || key === "financialPosition")
+                .map(([key, value]) => ({
+                key,
+                label: key,
+                value:
+                  (value.publishable === true ? "Disponible" : "No disponible") +
+                  (typeof value.missingReason === "string" && value.missingReason ? ` - ${value.missingReason}` : "")
+              }))}
+            />
+          </div>
+        </Card>
+      </section>
+
       <section style={{ display: "grid", gap: 20 }}>
         <SectionHeading
           eyebrow="Instituciones"
           title="Ficha rápida por aseguradora"
-          description="Acceso directo a la vista institucional con hechos de primas y estado de situación financiera."
+          description="Acceso directo a la vista institucional construida con primas y estado de situación financiera cuando estos dominios están disponibles."
         />
         {quickInstitutionCards.length > 0 ? (
           <div className="page-grid-3">

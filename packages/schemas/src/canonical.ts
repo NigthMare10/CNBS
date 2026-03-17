@@ -35,7 +35,7 @@ export const currencySchema = z.object({
 export const metricDefinitionSchema = z.object({
   metricId: z.string(),
   name: z.string(),
-  domain: z.enum(["premiums", "financialPosition", "dataset"]),
+  domain: z.enum(["premiums", "financialPosition", "incomeStatement", "dataset"]),
   unit: z.enum(["currency", "count", "ratio"]),
   publicationPolicy: z.enum(["official", "derived", "blocked"])
 });
@@ -60,6 +60,20 @@ export const financialPositionFactSchema = z.object({
   institutionCode: z.string(),
   accountId: z.string(),
   lineNumber: z.number().int(),
+  amountNational: z.number(),
+  amountForeign: z.number(),
+  amountCombined: z.number(),
+  sourceFileId: z.string(),
+  sourceRowNumber: z.number().int()
+});
+
+export const incomeStatementFactSchema = z.object({
+  datasetVersionId: z.string(),
+  period: z.string(),
+  institutionId: z.string(),
+  institutionCode: z.string(),
+  accountName: z.string(),
+  semanticCategory: z.enum(["netIncome", "retainedPremiums", "financialIncome", "expenses", "other"]),
   amountNational: z.number(),
   amountForeign: z.number(),
   amountCombined: z.number(),

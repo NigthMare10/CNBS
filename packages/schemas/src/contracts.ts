@@ -1,10 +1,19 @@
 import { z } from "zod";
 
-export const workbookKindSchema = z.enum(["premiums", "financialPosition", "reference"]);
+export const workbookKindSchema = z.enum(["premiums", "financialPosition", "incomeStatement", "reference", "unknown"]);
 export const validationSeveritySchema = z.enum(["critical", "high", "medium", "low"]);
 export const validationStatusSchema = z.enum(["passed", "warning", "failed"]);
 export const publishabilitySchema = z.enum(["publishable", "blocked", "warningOnly"]);
-export const datasetScopeSchema = z.enum(["premiums-only", "financial-only", "combined", "empty"]);
+export const datasetScopeSchema = z.enum([
+  "premiums-only",
+  "financial-only",
+  "income-statement-only",
+  "premiums-financial",
+  "premiums-income-statement",
+  "financial-income-statement",
+  "full-core",
+  "empty"
+]);
 
 export const businessPeriodSchema = z.object({
   reportDate: z.string(),
@@ -61,6 +70,7 @@ export const reconciliationSummarySchema = z.object({
 
 export const datasetVersionRecordSchema = z.object({
   datasetVersionId: z.string(),
+  ingestionRunId: z.string().nullable(),
   status: z.enum(["staged", "published", "failed", "rolledBack"]),
   createdAt: z.string(),
   publishedAt: z.string().nullable(),
@@ -69,6 +79,7 @@ export const datasetVersionRecordSchema = z.object({
   businessPeriods: z.object({
     premiums: z.union([businessPeriodSchema, z.undefined()]),
     financialPosition: z.union([businessPeriodSchema, z.undefined()]),
+    incomeStatement: z.union([businessPeriodSchema, z.undefined()]),
     reference: z.union([businessPeriodSchema, z.undefined()])
   }),
   datasetScope: datasetScopeSchema,

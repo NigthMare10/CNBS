@@ -1,16 +1,17 @@
 import { premiumRowSchema } from "@cnbs/schemas";
 import type { ParsedPremiumRow } from "../types";
-import { readWorkbook, worksheetToRecords } from "./excel";
+import { findWorksheetByHeaders, readWorkbook, worksheetToRecords } from "./excel";
+import { premiumHeaderConfig } from "../workbooks/signatures";
 
 export async function parsePremiumWorkbook(filePath: string): Promise<ParsedPremiumRow[]> {
   const workbook = await readWorkbook(filePath);
-  const worksheet = workbook.getWorksheet("Datos");
+  const worksheet = findWorksheetByHeaders(workbook, premiumHeaderConfig);
 
   if (!worksheet) {
-    throw new Error("Premium workbook missing Datos sheet.");
+    throw new Error("Premium workbook does not expose a recognizable tabular sheet.");
   }
 
-  return worksheetToRecords(worksheet).map((record) => {
+  return worksheetToRecords(worksheet, { aliases: premiumHeaderConfig.aliases }).map((record) => {
     const parsed = premiumRowSchema.parse(record);
 
     return {

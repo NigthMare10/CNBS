@@ -2,12 +2,18 @@
 
 ## Operational Sources
 
-The CNBS Dashboard now operates with two primary workbooks only:
+The CNBS Dashboard classifies uploads by workbook structure and semantic content, not by filename.
 
-1. `Primas.xlsx`
-2. `EstadoSituacionFinanciera.xlsx`
+Primary operational workbook types:
 
-The workbook previously used as functional reference (`INFORME_FINANCIERO_PRELIMINAR...xlsx`) is now optional.
+1. premiums
+2. financial position
+
+Additional detectable but non-operational type:
+
+- income statement
+
+The reference workbook (`INFORME_FINANCIERO_PRELIMINAR...xlsx`) remains optional and non-authoritative.
 
 ## Upload Policy
 
@@ -19,11 +25,18 @@ Accepted operational combinations:
 - premiums + financial position + optional reference
 - premiums + optional reference
 - financial position + optional reference
+- premiums + financial position + detected income statement
+- premiums + detected income statement
+- financial position + detected income statement
+- any of the above + optional reference
+- premiums + optional reference
+- financial position + optional reference
 
 Blocked combination:
 
 - reference only
 - no primary source at all
+- unclassified workbook with insufficient structural confidence
 
 ## Publication Behavior
 
@@ -43,8 +56,15 @@ Blocked combination:
 
 ### Combined
 
-- publish premiums + financial position domains
-- publish full phase-1 scope supported by current sources
+- publish the domains that were actually supplied and classified with confidence
+- dataset scope reflects the exact combination detected
+
+### Detected Income Statement Workbook
+
+- may be classified and traced in source files
+- is not treated as operational source for public publication
+- cannot by itself produce a publishable runtime dataset
+- if uploaded together with premiums or financial position, the public dataset still reflects only the two operational sources
 
 ### Optional Reference Provided
 
@@ -54,6 +74,16 @@ Blocked combination:
 ## Non-Supported Domains in Phase 1
 
 - official claims facts
-- official income statement facts
+- operational income statement publication
 - claims-to-premium ratios based on authoritative claims source
 - interannual 2025 vs 2024 comparisons when no raw historical publication exists
+
+## Classification Policy
+
+- filenames are ignored for business classification
+- workbooks are scored using:
+  - sheet names
+  - canonicalized headers
+  - semantic account markers
+  - workbook structure
+- if confidence is insufficient, the file is marked unclassified and the run is blocked with an actionable message

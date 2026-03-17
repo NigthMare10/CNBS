@@ -14,6 +14,12 @@ Taken from `.env.example`:
 - Password: `change-me`
 - Admin API secret: `local-dev-secret`
 
+## Display Timezone
+
+- default display timezone: `America/Tegucigalpa`
+- default locale: `es-HN`
+- internal timestamps remain UTC; UI renders a localized representation
+
 ## Public Routes
 
 | Route | File | Purpose | Data Source |
@@ -115,8 +121,9 @@ corepack pnpm --filter @cnbs/admin dev
 
 - URL: `http://localhost:3001/upload`
 - Action: upload:
-  - `primas.xlsx` (optional but primary)
-  - `estado_situacion_financiera.xlsx` (optional but primary)
+- premiums workbook (optional primary)
+- financial position workbook (optional primary)
+- income statement workbook (detectable, but non-operational for public publication)
   - `informe_financiero_referencia.xlsx` (optional reference)
 - API: `POST /api/admin/ingestions`
 - Result:
@@ -127,6 +134,7 @@ Important:
 
 - at least one primary workbook must be present
 - reference workbook alone is not enough to publish
+- workbook names may change; classification is based on structure and semantic content
 
 ### Step 3: Review Staging
 
@@ -156,6 +164,7 @@ Important:
   - `http://localhost:3000/version`
   - `http://localhost:4000/api/public/version`
 - Result: both show the same active `datasetVersionId`
+- the UI should show localized date/time for publication timestamps
 
 ### Step 7: Verify Public Dashboard Change
 
@@ -164,6 +173,14 @@ Important:
   - `http://localhost:3000/rankings`
   - `http://localhost:3000/institutions/davivienda`
 - Result: public UI reflects data from the newly active published dataset
+
+### Step 7A: Verify partial-domain behavior honestly
+
+- if you publish `premiums + incomeStatement` without `financialPosition`:
+  - `/version` must show `financialPosition` as unavailable
+  - `/rankings` must not pretend that assets/equity are valid
+  - `/institutions/:id` must not show assets/patrimony as zero
+  - `/` may show income statement summaries if the domain is present
 
 ## Partial Dataset Modes
 
@@ -178,6 +195,12 @@ Important:
 - financial views available
 - premiums views rendered as unavailable
 - charts needing premiums remain unavailable
+
+### Income Statement Only
+
+- upload is classified and traced
+- publication is blocked because no operational source was provided
+- the workbook is never silently remapped to premiums or balance
 
 ### Combined
 
@@ -250,3 +273,11 @@ Read:
 and compare with:
 
 - `http://localhost:4000/api/public/version`
+
+### Manual classification checks
+
+Examples that should now classify by structure rather than filename:
+
+- `Primas (2).xlsx` -> premiums
+- `balance_aseguradoras_enero.xlsx` -> financialPosition
+- `EstadoResultado.xlsx` -> incomeStatement

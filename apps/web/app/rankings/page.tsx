@@ -12,11 +12,17 @@ function stringValue(value: unknown, fallback = ""): string {
 }
 
 export default async function RankingsPage() {
-  const rankings = (await publicApi.rankings()) as Record<string, Array<Record<string, unknown>>>;
+  const [rankings, versionPayload] = await Promise.all([
+    publicApi.rankings() as Promise<Record<string, Array<Record<string, unknown>>>>,
+    publicApi.version() as Promise<{ activeDataset?: Record<string, unknown> }>
+  ]);
+  const domainAvailability = (versionPayload.activeDataset?.domainAvailability as Record<string, Record<string, unknown>> | undefined) ?? {};
+  const financialAvailable = domainAvailability.financialPosition?.publishable === true;
   const rankingGroups = [
     { key: "premiums", title: "Primas", description: "Posición por primas oficiales publicadas." },
-    { key: "assets", title: "Activos", description: "Comparativo por activos totales del balance." },
-    { key: "equity", title: "Patrimonio", description: "Comparativo por patrimonio reportado." }
+    { key: "assets", title: "Activos", description: "Comparativo por activos totales del balance.", enabled: financialAvailable },
+    { key: "equity", title: "Patrimonio", description: "Comparativo por patrimonio reportado.", enabled: financialAvailable },
+    { key: "reserves", title: "Reservas Técnicas", description: "Comparativo por reservas técnicas del balance.", enabled: financialAvailable }
   ];
 
   return (
@@ -32,7 +38,7 @@ export default async function RankingsPage() {
 
           return (
             <Card key={group.key} title={group.title} subtitle={group.description}>
-              {items.length > 0 ? (
+              {group.enabled !== false && items.length > 0 ? (
                 <ol style={{ margin: 0, padding: 0, listStyle: "none", display: "grid", gap: 12 }}>
                   {items.map((item, index) => (
                     <li
@@ -43,13 +49,20 @@ export default async function RankingsPage() {
                         <strong style={{ color: "#0f172a" }}>{index + 1}.</strong> {stringValue(item.institutionName, stringValue(item.institutionId))}
                       </span>
                       <strong style={{ color: "#0f172a", whiteSpace: "nowrap" }}>
-                        {currency(Number(item.premiumAmount ?? item.totalAssets ?? item.equity ?? 0))}
+                        {currency(Number(item.premiumAmount ?? item.totalAssets ?? item.equity ?? item.totalReserves ?? 0))}
                       </strong>
                     </li>
                   ))}
                 </ol>
               ) : (
-                <EmptyState title="Sin ranking disponible" description="La versión activa no contiene registros suficientes para este comparativo." />
+                <EmptyState
+                  title="Dato no disponible"
+                  description={
+                    group.enabled === false
+                      ? "La versión activa no incluye el dominio requerido para este ranking."
+                      : "La versión activa no contiene registros suficientes para este comparativo."
+                  }
+                />
               )}
             </Card>
           );

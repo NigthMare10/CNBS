@@ -1,6 +1,10 @@
 import { Badge, Card, SectionHeading } from "@cnbs/ui";
 import { AdminPagination } from "../../../components/admin-pagination";
+import { DetectedWorkbooksList } from "../../../components/detected-workbooks-list";
 import { JsonViewerWithCopy } from "../../../components/json-viewer-with-copy";
+import { WorkbookClassificationSummary } from "../../../components/workbook-classification-summary";
+import { adminTimeZoneLabel, formatAdminDateTime } from "../../../lib/date-time";
+import { getOperationalLabel } from "../../../lib/traceability";
 import { getAdminJson } from "../../../lib/api";
 import { requireAdminSession } from "../../../lib/auth";
 
@@ -77,7 +81,7 @@ export default async function ReconciliationPage() {
 
       <Card
         title={String(latest.ingestionRunId)}
-        subtitle={String(latest.createdAt)}
+        subtitle={formatAdminDateTime(stringValue(latest.createdAt))}
         actions={
           <div className="admin-actions">
             <Badge>{publishabilityOf(latest.validationSummary, "blocked")}</Badge>
@@ -85,6 +89,16 @@ export default async function ReconciliationPage() {
           </div>
         }
       >
+        <div className="admin-meta-item" style={{ marginBottom: 18 }}>
+          <span className="admin-meta-item__label">Etiqueta operativa</span>
+          <span className="admin-meta-item__value">
+            {getOperationalLabel({
+              datasetScope: latest.draftDatasetVersion && typeof latest.draftDatasetVersion === "object" ? (latest.draftDatasetVersion as Record<string, unknown>).datasetScope : undefined,
+              businessPeriods: latest.draftDatasetVersion && typeof latest.draftDatasetVersion === "object" ? (latest.draftDatasetVersion as Record<string, unknown>).businessPeriods : undefined,
+              status: latest.publicationState
+            })}
+          </span>
+        </div>
         <div className="admin-grid-2">
           <div className="admin-meta-list">
             <div className="admin-meta-item">
@@ -102,9 +116,13 @@ export default async function ReconciliationPage() {
           </div>
 
           <div className="admin-inline-note">
-            Revisa primero los contadores de severidad. Si no existen discrepancias bloqueantes, la corrida puede continuar al paso de publicación.
+            Revisa primero los contadores de severidad. Si no existen discrepancias bloqueantes, la corrida puede continuar al paso de publicación. Horario mostrado en {adminTimeZoneLabel()}.
           </div>
         </div>
+
+        <div className="admin-section-divider" style={{ margin: "22px 0" }} />
+
+        <DetectedWorkbooksList run={latest} />
 
         <div className="admin-section-divider" style={{ margin: "22px 0" }} />
 
@@ -145,6 +163,8 @@ export default async function ReconciliationPage() {
             )}
           </Card>
         </div>
+
+        <WorkbookClassificationSummary run={latest} title="Resumen visual del fallo de clasificación" />
 
         <JsonViewerWithCopy summary="Ver JSON completo de la corrida" value={latest} />
       </Card>

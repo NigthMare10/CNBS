@@ -14,6 +14,8 @@ const envSchema = z.object({
   CNBS_OIDC_REDIRECT_URI: z.string().optional(),
   CNBS_OIDC_SCOPES: z.string().default("openid profile email"),
   CNBS_OIDC_POST_LOGOUT_REDIRECT_URI: z.string().optional(),
+  CNBS_DISPLAY_TIME_ZONE: z.string().default("America/Tegucigalpa"),
+  CNBS_DISPLAY_LOCALE: z.string().default("es-HN"),
   CNBS_API_PORT: z.coerce.number().int().positive().default(4000),
   CNBS_PUBLIC_API_BASE_URL: z.string().url().default("http://localhost:4000"),
   CNBS_STORAGE_ROOT: z.string().default("./storage")
@@ -65,6 +67,11 @@ export const authConfig = {
     scopes: env.CNBS_OIDC_SCOPES,
     postLogoutRedirectUri: env.CNBS_OIDC_POST_LOGOUT_REDIRECT_URI
   }
+} as const;
+
+export const displayConfig = {
+  timeZone: env.CNBS_DISPLAY_TIME_ZONE,
+  locale: env.CNBS_DISPLAY_LOCALE
 } as const;
 
 export function isOidcConfigured(): boolean {

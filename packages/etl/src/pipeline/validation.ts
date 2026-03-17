@@ -1,6 +1,7 @@
 import { normalizeText } from "@cnbs/domain";
 import type {
   ParsedFinancialPositionRow,
+  ParsedIncomeStatementRow,
   ParsedPremiumRow,
   ParsedReferenceWorkbook
 } from "../types";
@@ -21,11 +22,13 @@ function summarizePublishability(issues: ValidationIssue[]): ValidationSummary["
 export function validateParsedWorkbooks(input: {
   premiumRows?: ParsedPremiumRow[];
   financialPositionRows?: ParsedFinancialPositionRow[];
+  incomeStatementRows?: ParsedIncomeStatementRow[];
   referenceWorkbook?: ParsedReferenceWorkbook | null;
 }): ValidationSummary {
   const issues: ValidationIssue[] = [];
   const premiumRows = input.premiumRows ?? [];
   const financialRows = input.financialPositionRows ?? [];
+  const incomeStatementRows = input.incomeStatementRows ?? [];
   const referenceWorkbook = input.referenceWorkbook ?? null;
 
   if (premiumRows.length === 0 && financialRows.length === 0) {
@@ -58,6 +61,24 @@ export function validateParsedWorkbooks(input: {
     });
   }
 
+  if (incomeStatementRows.length === 0) {
+    issues.push({
+      code: "INCOME_STATEMENT_SOURCE_NOT_PROVIDED",
+      severity: "low",
+      status: "warning",
+      scope: "incomeStatement",
+      message: "Income statement workbook not provided; this non-operational domain remains unavailable in public publication."
+    });
+  } else {
+    issues.push({
+      code: "INCOME_STATEMENT_DETECTED_NON_OPERATIONAL",
+      severity: "low",
+      status: "warning",
+      scope: "incomeStatement",
+      message: "Income statement workbook was detected, but current public publication policy only uses premiums and financial position as operational sources."
+    });
+  }
+
   const premiumPeriods = new Set(premiumRows.map((row) => String(row.reportDateRaw)));
   if (premiumPeriods.size > 1) {
     issues.push({
@@ -77,6 +98,17 @@ export function validateParsedWorkbooks(input: {
       status: "failed",
       scope: "financialPosition",
       message: "Financial position workbook contains more than one report period."
+    });
+  }
+
+  const incomePeriods = new Set(incomeStatementRows.map((row) => String(row.reportDateRaw)));
+  if (incomePeriods.size > 1) {
+    issues.push({
+      code: "INCOME_STATEMENT_MULTIPLE_PERIODS",
+      severity: "high",
+      status: "failed",
+      scope: "incomeStatement",
+      message: "Income statement workbook contains more than one report period."
     });
   }
 
@@ -116,6 +148,21 @@ export function validateParsedWorkbooks(input: {
       status: "failed",
       scope: "financialPosition",
       message: "Financial position workbook does not contain TOTAL ACTIVOS."
+    });
+  }
+
+  const incomeStatementSignals = ["UTILIDAD", "RESULTADO NETO", "INGRESOS FINANCIEROS", "GASTOS", "PRIMAS"];
+  const hasIncomeStatementMarkers = incomeStatementRows.some((row) =>
+    incomeStatementSignals.some((signal) => normalizeText(row.accountRaw).includes(signal))
+  );
+
+  if (incomeStatementRows.length > 0 && !hasIncomeStatementMarkers) {
+    issues.push({
+      code: "INCOME_STATEMENT_MARKERS_MISSING",
+      severity: "high",
+      status: "failed",
+      scope: "incomeStatement",
+      message: "Income statement workbook does not contain expected income statement accounts."
     });
   }
 

@@ -9,11 +9,12 @@ import {
 import type {
   BusinessPeriod,
   FinancialPositionFact,
+  IncomeStatementFact,
   PremiumFact,
   SourceFileRecord,
   ValidationIssue
 } from "@cnbs/domain";
-import type { ParsedFinancialPositionRow, ParsedPremiumRow } from "../types";
+import type { ParsedFinancialPositionRow, ParsedIncomeStatementRow, ParsedPremiumRow } from "../types";
 
 function parseExcelSerialDate(value: string | number | Date): BusinessPeriod {
   const date = value instanceof Date ? value : new Date(Math.round(((typeof value === "number" ? value : Number(value)) - 25569) * 86400 * 1000));
@@ -140,6 +141,65 @@ export function normalizeFinancialPositionFacts(input: {
   }
 
   return { facts, period, issues };
+}
+
+export function normalizeIncomeStatementRows(input: {
+  datasetVersionId: string;
+  sourceFile: SourceFileRecord;
+  rows: ParsedIncomeStatementRow[];
+}): { facts: IncomeStatementFact[]; period: BusinessPeriod | undefined; issues: ValidationIssue[]; records: number } {
+  const issues: ValidationIssue[] = [];
+  const period = input.rows[0] ? parseExcelSerialDate(input.rows[0].reportDateRaw) : undefined;
+  const facts: IncomeStatementFact[] = [];
+
+  function semanticCategory(accountRaw: string): IncomeStatementFact["semanticCategory"] {
+    const account = accountRaw.toUpperCase();
+    if (account.includes("RESULTADO NETO") || account.includes("UTILIDAD")) {
+      return "netIncome";
+    }
+    if (account.includes("PRIMAS RETENIDAS")) {
+      return "retainedPremiums";
+    }
+    if (account.includes("INGRESOS FINANCIEROS")) {
+      return "financialIncome";
+    }
+    if (account.includes("GASTO") || account.includes("EGRESO")) {
+      return "expenses";
+    }
+    return "other";
+  }
+
+  for (const row of input.rows) {
+    const institution = resolveInstitution(row.institutionNameRaw);
+    if (!institution) {
+      issues.push({
+        code: "INCOME_STATEMENT_INSTITUTION_ALIAS_UNRESOLVED",
+        severity: "high",
+        status: "failed",
+        scope: `incomeStatement:row:${row.rowNumber}`,
+        message: `Unable to resolve institution ${row.institutionNameRaw}.`
+      });
+      continue;
+    }
+
+    const amountNational = numberValue(row.amountNationalRaw);
+    const amountForeign = numberValue(row.amountForeignRaw);
+    facts.push({
+      datasetVersionId: input.datasetVersionId,
+      period: period?.reportDate ?? "",
+      institutionId: institution.institutionId,
+      institutionCode: institution.canonicalCode,
+      accountName: row.accountRaw,
+      semanticCategory: semanticCategory(row.accountRaw),
+      amountNational,
+      amountForeign,
+      amountCombined: amountNational + amountForeign,
+      sourceFileId: input.sourceFile.sourceFileId,
+      sourceRowNumber: row.rowNumber
+    });
+  }
+
+  return { facts, period, issues, records: input.rows.length };
 }
 
 export function canonicalCatalogs() {

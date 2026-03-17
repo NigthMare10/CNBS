@@ -1,6 +1,9 @@
 import { Card, SectionHeading } from "@cnbs/ui";
 import { rollbackVersionAction } from "../../actions";
 import { AdminPagination } from "../../../components/admin-pagination";
+import { formatAdminDateTime } from "../../../lib/date-time";
+import { getDerivedArtifactsSummary } from "../../../lib/derived-coverage";
+import { getOperationalLabel } from "../../../lib/traceability";
 import { getAdminJson } from "../../../lib/api";
 import { requireAdminSession } from "../../../lib/auth";
 
@@ -44,7 +47,7 @@ export default async function PublicationsPage({ searchParams }: { searchParams:
                 <Card
                   key={versionId}
                   title={versionId}
-                  subtitle={String(version.publishedAt ?? version.createdAt)}
+                  subtitle={formatAdminDateTime(stringValue(version.publishedAt, stringValue(version.createdAt)))}
                   actions={
                     isActive ? (
                       <span className="admin-alert--success" style={{ padding: "6px 12px", fontSize: 12 }}>
@@ -53,11 +56,29 @@ export default async function PublicationsPage({ searchParams }: { searchParams:
                     ) : null
                   }
                 >
+                  <div className="admin-meta-item" style={{ marginBottom: 18 }}>
+                    <span className="admin-meta-item__label">Etiqueta operativa</span>
+                    <span className="admin-meta-item__value">
+                      {getOperationalLabel({
+                        datasetScope: version.datasetScope,
+                        businessPeriods: version.businessPeriods,
+                        status: isActive ? "active" : version.status
+                      })}
+                    </span>
+                  </div>
                   <div className="admin-meta-row">
                     <div className="admin-actions" style={{ gap: 18 }}>
                       <span className="admin-help">Estado: {stringValue(version.status, "published")}</span>
                       <span className="admin-help">Usuario: {stringValue(version.uploadedBy, "n/d")}</span>
+                      <span className="admin-help">IngestionRun: {stringValue(version.ingestionRunId, "n/d")}</span>
                     </div>
+                  </div>
+                  <div className="admin-meta-item" style={{ marginTop: 18 }}>
+                    <span className="admin-meta-item__label">Derivados materializados</span>
+                    <span className="admin-meta-item__value">
+                      {getDerivedArtifactsSummary(version.domainAvailability as Record<string, Record<string, unknown>> | undefined).join(" · ") ||
+                        "No se derivaron artefactos públicos visibles."}
+                    </span>
                   </div>
                   {!isActive && (
                     <form action={rollbackVersionAction} style={{ marginTop: 18 }}>

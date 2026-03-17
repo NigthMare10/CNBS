@@ -46,7 +46,7 @@ export interface FinancialAccountAlias {
 export interface MetricDefinition {
   metricId: string;
   name: string;
-  domain: "premiums" | "financialPosition" | "dataset";
+  domain: "premiums" | "financialPosition" | "incomeStatement" | "dataset";
   unit: "currency" | "count" | "ratio";
   publicationPolicy: "official" | "derived" | "blocked";
 }
@@ -71,6 +71,20 @@ export interface FinancialPositionFact {
   institutionCode: string;
   accountId: string;
   lineNumber: number;
+  amountNational: number;
+  amountForeign: number;
+  amountCombined: number;
+  sourceFileId: string;
+  sourceRowNumber: number;
+}
+
+export interface IncomeStatementFact {
+  datasetVersionId: string;
+  period: string;
+  institutionId: string;
+  institutionCode: string;
+  accountName: string;
+  semanticCategory: "netIncome" | "retainedPremiums" | "financialIncome" | "expenses" | "other";
   amountNational: number;
   amountForeign: number;
   amountCombined: number;

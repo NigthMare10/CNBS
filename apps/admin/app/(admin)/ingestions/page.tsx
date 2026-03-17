@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { Badge, Card, SectionHeading } from "@cnbs/ui";
 import { AdminPagination } from "../../../components/admin-pagination";
+import { WorkbookClassificationSummary } from "../../../components/workbook-classification-summary";
+import { formatAdminDateTime } from "../../../lib/date-time";
+import { getDerivedArtifactsSummary } from "../../../lib/derived-coverage";
+import { getOperationalLabel } from "../../../lib/traceability";
 import { getAdminJson } from "../../../lib/api";
 import { requireAdminSession } from "../../../lib/auth";
 
@@ -27,6 +31,9 @@ export default async function IngestionsPage({ searchParams }: { searchParams: P
       session
     )) ?? { items: [], page: 1, totalPages: 1 };
   const runs = response.items;
+  const systemStatus = await getAdminJson<Record<string, unknown>>("/api/admin/system/status", session);
+  const activeDataset = systemStatus.activeDataset as Record<string, unknown> | undefined;
+  const activeVersionId = typeof activeDataset?.datasetVersionId === "string" ? activeDataset.datasetVersionId : null;
 
   return (
     <div className="admin-page">
@@ -43,15 +50,26 @@ export default async function IngestionsPage({ searchParams }: { searchParams: P
               <Card
                 key={String(run.ingestionRunId)}
                 title={String(run.ingestionRunId)}
-                subtitle={String(run.createdAt)}
+                subtitle={formatAdminDateTime(stringValue(run.createdAt))}
                 actions={
                   <div className="admin-actions">
                     <Badge>{publishabilityOf(run.validationSummary, "blocked")}</Badge>
                     <Badge>{publishabilityOf(run.reconciliationSummary, "warningOnly")}</Badge>
+                    <Badge>{stringValue(run.publicationState, "staged")}</Badge>
                   </div>
                 }
               >
                 <div className="admin-grid-fluid">
+                  <div className="admin-meta-item">
+                    <span className="admin-meta-item__label">Etiqueta operativa</span>
+                    <span className="admin-meta-item__value">
+                      {getOperationalLabel({
+                        datasetScope: run.draftDatasetVersion && typeof run.draftDatasetVersion === "object" ? (run.draftDatasetVersion as Record<string, unknown>).datasetScope : undefined,
+                        businessPeriods: run.draftDatasetVersion && typeof run.draftDatasetVersion === "object" ? (run.draftDatasetVersion as Record<string, unknown>).businessPeriods : undefined,
+                        status: run.publicationState
+                      })}
+                    </span>
+                  </div>
                   <div className="admin-meta-item">
                     <span className="admin-meta-item__label">Usuario</span>
                     <span className="admin-meta-item__value">{stringValue(run.uploadedBy, "n/d")}</span>
@@ -60,6 +78,37 @@ export default async function IngestionsPage({ searchParams }: { searchParams: P
                     <span className="admin-meta-item__label">Archivos recibidos</span>
                     <span className="admin-meta-item__value">{Array.isArray(run.sourceFiles) ? run.sourceFiles.length : 0}</span>
                   </div>
+                  <div className="admin-meta-item">
+                    <span className="admin-meta-item__label">Dataset version</span>
+                    <span className="admin-meta-item__value">{stringValue(run.publishedDatasetVersionId, "Aún no publicada")}</span>
+                  </div>
+                  <div className="admin-meta-item">
+                    <span className="admin-meta-item__label">Publicado</span>
+                    <span className="admin-meta-item__value">
+                      {run.publishedAt ? formatAdminDateTime(stringValue(run.publishedAt)) : "No publicado"}
+                    </span>
+                  </div>
+                </div>
+
+                {run.publishedDatasetVersionId && activeVersionId === run.publishedDatasetVersionId ? (
+                  <div className="admin-alert--success" style={{ marginTop: 18 }}>
+                    Esta corrida produjo la versión activa actual del sistema.
+                  </div>
+                ) : run.publishedDatasetVersionId ? (
+                  <div className="admin-alert" style={{ marginTop: 18 }}>
+                    Esta corrida ya fue publicada y generó una versión histórica.
+                  </div>
+                ) : null}
+
+                <div className="admin-meta-item" style={{ marginTop: 18 }}>
+                  <span className="admin-meta-item__label">Derivados esperados</span>
+                  <span className="admin-meta-item__value">
+                    {getDerivedArtifactsSummary(
+                      run.draftDatasetVersion && typeof run.draftDatasetVersion === "object"
+                        ? ((run.draftDatasetVersion as Record<string, unknown>).domainAvailability as Record<string, Record<string, unknown>> | undefined)
+                        : undefined
+                    ).join(" · ") || "No se derivarán artefactos públicos con esta corrida."}
+                  </span>
                 </div>
 
                 <div className="admin-actions" style={{ marginTop: 18 }}>
@@ -70,6 +119,8 @@ export default async function IngestionsPage({ searchParams }: { searchParams: P
                     Ir a publicación
                   </Link>
                 </div>
+
+                <WorkbookClassificationSummary run={run} title="Resumen de clasificación del archivo" />
               </Card>
             ))}
           </div>

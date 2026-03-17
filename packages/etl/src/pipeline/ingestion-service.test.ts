@@ -38,6 +38,19 @@ describe("IngestionService", () => {
     sizeBytes
   });
 
+  async function createIncomeStatementWorkbook() {
+    const directory = await mkdtemp(join(tmpdir(), "cnbs-income-statement-"));
+    const workbookPath = join(directory, "EstadoResultado.xlsx");
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Estado de Resultados");
+    worksheet.addRow(["Tipo", "Inst", "Logo", "FechaReporte", "Linea", "Cuenta", "MonedaNacional", "MonedaExtranjera"]);
+    worksheet.addRow([1, 601, "SEGUROS DAVIVIENDA", 46053, 1, "Primas Retenidas", 100, 0]);
+    worksheet.addRow([1, 601, "SEGUROS DAVIVIENDA", 46053, 2, "Ingresos Financieros", 25, 0]);
+    worksheet.addRow([1, 601, "SEGUROS DAVIVIENDA", 46053, 3, "Resultado Neto del Ejercicio", 10, 0]);
+    await workbook.xlsx.writeFile(workbookPath);
+    return workbookPath;
+  }
+
   beforeEach(async () => {
     await storage.clearStorage();
   });
@@ -153,7 +166,7 @@ describe("IngestionService", () => {
   it("publishes a premiums-only dataset with partial metadata", async () => {
     const run = await service.ingestWorkbookSet({
       uploadedBy: "tester",
-      files: [fixtureFile("premiums", "primas.xlsx", 12979)]
+      files: [fixtureFile("premiums", "Primas (2).xlsx", 12979)]
     });
 
     expect(run.validationSummary.publishability).toBe("warningOnly");
@@ -173,7 +186,7 @@ describe("IngestionService", () => {
   it("publishes a financial-only dataset with partial metadata", async () => {
     const run = await service.ingestWorkbookSet({
       uploadedBy: "tester",
-      files: [fixtureFile("financialPosition", "estado_situacion_financiera.xlsx", 21236)]
+      files: [fixtureFile("financialPosition", "balance_aseguradoras_enero.xlsx", 21236)]
     });
 
     expect(run.validationSummary.publishability).toBe("warningOnly");
@@ -199,7 +212,7 @@ describe("IngestionService", () => {
     const published = await service.publishStagedRun(run.ingestionRunId, "tester");
     expect(run.sourceFiles).toHaveLength(3);
     expect(run.sourceFiles.map((file) => file.kind).sort()).toEqual(["financialPosition", "premiums", "reference"]);
-    expect(published.datasetScope).toBe("combined");
+    expect(published.datasetScope).toBe("premiums-financial");
     expect(published.domainAvailability.reference.sourceProvided).toBe(true);
   });
 
@@ -215,7 +228,7 @@ describe("IngestionService", () => {
     const published = await service.publishStagedRun(run.ingestionRunId, "tester");
     expect(run.sourceFiles).toHaveLength(2);
     expect(run.sourceFiles.map((file) => file.kind).sort()).toEqual(["financialPosition", "premiums"]);
-    expect(published.datasetScope).toBe("combined");
+    expect(published.datasetScope).toBe("premiums-financial");
     expect(published.domainAvailability.financialPosition.sourceProvided).toBe(true);
     expect(published.domainAvailability.reference.sourceProvided).toBe(false);
   });
@@ -238,5 +251,69 @@ describe("IngestionService", () => {
 
     expect(run.validationSummary.publishability).toBe("blocked");
     expect(run.validationSummary.issues.some((issue) => issue.code === "SECURITY_MIME_REJECTED")).toBe(true);
+  });
+
+  it("blocks an incomeStatement-only dataset because only premiums and financial position are operational sources", async () => {
+    const incomeStatementPath = await createIncomeStatementWorkbook();
+    const run = await service.ingestWorkbookSet({
+      uploadedBy: "tester",
+      files: [
+        {
+          filePath: incomeStatementPath,
+          originalFilename: "EstadoResultado.xlsx",
+          mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          sizeBytes: 4096
+        }
+      ]
+    });
+
+    expect(run.sourceFiles).toHaveLength(1);
+    expect(run.sourceFiles[0]?.kind).toBe("incomeStatement");
+    expect(run.validationSummary.publishability).toBe("blocked");
+    expect(run.validationSummary.issues.some((issue) => issue.code === "NO_PRIMARY_SOURCE_PROVIDED")).toBe(true);
+  });
+
+  it("publishes a premiums plus incomeStatement upload as premiums-only operational dataset without faking financialPosition", async () => {
+    const incomeStatementPath = await createIncomeStatementWorkbook();
+    const run = await service.ingestWorkbookSet({
+      uploadedBy: "tester",
+      files: [
+        fixtureFile("premiums", "primas_marzo_2026.xlsx", 12979),
+        {
+          filePath: incomeStatementPath,
+          originalFilename: "EstadoResultado.xlsx",
+          mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          sizeBytes: 4096
+        }
+      ]
+    });
+
+    const published = await service.publishStagedRun(run.ingestionRunId, "tester");
+    expect(published.datasetScope).toBe("premiums-only");
+    expect(published.domainAvailability.incomeStatement.sourceProvided).toBe(true);
+    expect(published.domainAvailability.incomeStatement.publishable).toBe(false);
+    expect(published.domainAvailability.financialPosition.publishable).toBe(false);
+  });
+
+  it("publishes a financial plus incomeStatement upload as financial-only operational dataset", async () => {
+    const incomeStatementPath = await createIncomeStatementWorkbook();
+    const run = await service.ingestWorkbookSet({
+      uploadedBy: "tester",
+      files: [
+        fixtureFile("financialPosition", "EstadoSituacionFinanciera (1).xlsx", 21236),
+        {
+          filePath: incomeStatementPath,
+          originalFilename: "EstadoResultado.xlsx",
+          mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          sizeBytes: 4096
+        }
+      ]
+    });
+
+    const published = await service.publishStagedRun(run.ingestionRunId, "tester");
+    expect(published.datasetScope).toBe("financial-only");
+    expect(published.domainAvailability.incomeStatement.sourceProvided).toBe(true);
+    expect(published.domainAvailability.incomeStatement.publishable).toBe(false);
+    expect(published.domainAvailability.financialPosition.publishable).toBe(true);
   });
 });
