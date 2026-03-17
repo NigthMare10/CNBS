@@ -1,5 +1,6 @@
 import { Badge, Card, SectionHeading } from "@cnbs/ui";
 import { AdminPagination } from "../../../components/admin-pagination";
+import { JsonViewerWithCopy } from "../../../components/json-viewer-with-copy";
 import { getAdminJson } from "../../../lib/api";
 import { requireAdminSession } from "../../../lib/auth";
 
@@ -145,14 +146,7 @@ export default async function ReconciliationPage() {
           </Card>
         </div>
 
-        <details style={{ marginTop: 20 }}>
-          <summary className="admin-link" style={{ cursor: "pointer" }}>
-            Ver JSON completo de la corrida
-          </summary>
-          <pre className="admin-code" style={{ marginTop: 14 }}>
-            {JSON.stringify(latest, null, 2)}
-          </pre>
-        </details>
+        <JsonViewerWithCopy summary="Ver JSON completo de la corrida" value={latest} />
       </Card>
 
       <AdminPagination basePath="/ingestions" page={runsResponse.page} totalPages={runsResponse.totalPages} />
