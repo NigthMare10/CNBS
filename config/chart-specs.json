@@ -1,0 +1,58 @@
+{
+  "source": {
+    "referenceWorkbook": "INFORME_FINANCIERO_PRELIMINAR.xlsx",
+    "sheet": "Gráficos",
+    "extractedFromChartXml": true
+  },
+  "charts": [
+    {
+      "id": "premium-claims-by-line-december",
+      "title": "Primas y Siniestros por Ramo a Diciembre 2025",
+      "referenceRanges": [
+        "'1. Ramos Totales'!$A$10:$A$20",
+        "'1. Ramos Totales'!$C$10:$C$20",
+        "'1. Ramos Totales'!$G$10:$G$20"
+      ],
+      "dimensions": ["ramo"],
+      "expectedSeries": ["primas", "siniestros"],
+      "runtimeStatus": "partial",
+      "runtimeRule": "Show premiums-only series when premium source is present. Claims series remains unavailable until raw claims feed exists."
+    },
+    {
+      "id": "claims-premium-ratio-by-line-yoy",
+      "title": "Relación de Siniestros / Primas por Ramo 2025 vs 2024",
+      "referenceRanges": [
+        "'1. Ramos Totales'!$J$10:$J$20",
+        "'1. Ramos Totales'!$K$10:$K$20"
+      ],
+      "dimensions": ["ramo", "periodo"],
+      "expectedSeries": ["ratio-2025", "ratio-2024"],
+      "runtimeStatus": "unavailable",
+      "runtimeRule": "Do not compute without authoritative claims feed and historical comparative period."
+    },
+    {
+      "id": "market-share-by-company-december",
+      "title": "Participación de Mercado a Diciembre por Compañía",
+      "referenceRanges": [
+        "'8. Primas y Siniestros Totales'!$B$10:$B$21",
+        "'8. Primas y Siniestros Totales'!$D$10:$D$21"
+      ],
+      "dimensions": ["institucion"],
+      "expectedSeries": ["participacion-mercado"],
+      "runtimeStatus": "supported",
+      "runtimeRule": "Derive from published premium totals by institution and market share percentage."
+    },
+    {
+      "id": "premium-claims-totals-by-company",
+      "title": "Primas y Siniestros Totales por Compañía",
+      "referenceRanges": [
+        "'8. Primas y Siniestros Totales'!$D$10:$D$21",
+        "'8. Primas y Siniestros Totales'!$H$10:$H$21"
+      ],
+      "dimensions": ["institucion"],
+      "expectedSeries": ["primas", "siniestros"],
+      "runtimeStatus": "partial",
+      "runtimeRule": "Show premiums-only totals when premium source is present. Claims totals remain unavailable until raw claims feed exists."
+    }
+  ]
+}

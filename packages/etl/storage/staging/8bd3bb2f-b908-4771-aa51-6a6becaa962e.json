@@ -1,0 +1,689 @@
+{
+  "ingestionRunId": "8bd3bb2f-b908-4771-aa51-6a6becaa962e",
+  "createdAt": "2026-03-16T14:34:07.074Z",
+  "uploadedBy": "tester",
+  "sourceFiles": [
+    {
+      "sourceFileId": "092717f2-b8f9-4ac7-88f9-929b4e7485c7",
+      "kind": "premiums",
+      "originalFilename": "corrupt.xlsx",
+      "storedFilename": "092717f2-b8f9-4ac7-88f9-929b4e7485c7.xlsx",
+      "sha256": "f300f6a921e42e9c177aa31cb9085db9067972ed4901536757e8e339158c6814",
+      "sizeBytes": 9,
+      "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "detectedSignature": "pending",
+      "uploadedAt": "2026-03-16T14:34:07.032Z"
+    },
+    {
+      "sourceFileId": "6fe23447-c4d3-4cea-8f40-9bd50f47eb8a",
+      "kind": "premiums",
+      "originalFilename": "estado_situacion_financiera.xlsx",
+      "storedFilename": "6fe23447-c4d3-4cea-8f40-9bd50f47eb8a.xlsx",
+      "sha256": "5805c37884f15b917cd7bd9b7447c52e47b758a4cda8d210c0d75008d260bcde",
+      "sizeBytes": 21236,
+      "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "detectedSignature": "pending",
+      "uploadedAt": "2026-03-16T14:34:07.045Z"
+    },
+    {
+      "sourceFileId": "dc6d75ad-a02c-475f-872c-18dbb0abbfaa",
+      "kind": "premiums",
+      "originalFilename": "informe_financiero_referencia.xlsx",
+      "storedFilename": "dc6d75ad-a02c-475f-872c-18dbb0abbfaa.xlsx",
+      "sha256": "636283f22a543447443466ffeb0c34cdf8de4e5b23cca2fa71b3e7f7eefaf8eb",
+      "sizeBytes": 453545,
+      "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "detectedSignature": "pending",
+      "uploadedAt": "2026-03-16T14:34:07.067Z"
+    }
+  ],
+  "validationSummary": {
+    "publishability": "blocked",
+    "issues": [
+      {
+        "code": "SECURITY_MAGIC_BYTES",
+        "severity": "critical",
+        "status": "failed",
+        "scope": "C:\\Users\\cesar.vivas\\Desktop\\Seguros Dashboard\\packages\\etl\\storage\\quarantine\\092717f2-b8f9-4ac7-88f9-929b4e7485c7.xlsx",
+        "message": "Workbook does not have ZIP magic bytes."
+      }
+    ]
+  },
+  "reconciliationSummary": {
+    "publishability": "warningOnly",
+    "issues": []
+  },
+  "draftDatasetVersion": {
+    "datasetVersionId": "failed-9c30f129",
+    "status": "failed",
+    "createdAt": "2026-03-16T14:34:07.074Z",
+    "publishedAt": null,
+    "uploadedBy": "tester",
+    "sourceFiles": [
+      {
+        "sourceFileId": "092717f2-b8f9-4ac7-88f9-929b4e7485c7",
+        "kind": "premiums",
+        "originalFilename": "corrupt.xlsx",
+        "storedFilename": "092717f2-b8f9-4ac7-88f9-929b4e7485c7.xlsx",
+        "sha256": "f300f6a921e42e9c177aa31cb9085db9067972ed4901536757e8e339158c6814",
+        "sizeBytes": 9,
+        "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "detectedSignature": "pending",
+        "uploadedAt": "2026-03-16T14:34:07.032Z"
+      },
+      {
+        "sourceFileId": "6fe23447-c4d3-4cea-8f40-9bd50f47eb8a",
+        "kind": "premiums",
+        "originalFilename": "estado_situacion_financiera.xlsx",
+        "storedFilename": "6fe23447-c4d3-4cea-8f40-9bd50f47eb8a.xlsx",
+        "sha256": "5805c37884f15b917cd7bd9b7447c52e47b758a4cda8d210c0d75008d260bcde",
+        "sizeBytes": 21236,
+        "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "detectedSignature": "pending",
+        "uploadedAt": "2026-03-16T14:34:07.045Z"
+      },
+      {
+        "sourceFileId": "dc6d75ad-a02c-475f-872c-18dbb0abbfaa",
+        "kind": "premiums",
+        "originalFilename": "informe_financiero_referencia.xlsx",
+        "storedFilename": "dc6d75ad-a02c-475f-872c-18dbb0abbfaa.xlsx",
+        "sha256": "636283f22a543447443466ffeb0c34cdf8de4e5b23cca2fa71b3e7f7eefaf8eb",
+        "sizeBytes": 453545,
+        "mimeType": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "detectedSignature": "pending",
+        "uploadedAt": "2026-03-16T14:34:07.067Z"
+      }
+    ],
+    "businessPeriods": {},
+    "fingerprint": "b60bf80af564cc33c6422bd3dd978fdafa8d06600a176dc14c2b65f32c3da263",
+    "validationSummary": {
+      "publishability": "blocked",
+      "issues": [
+        {
+          "code": "SECURITY_MAGIC_BYTES",
+          "severity": "critical",
+          "status": "failed",
+          "scope": "C:\\Users\\cesar.vivas\\Desktop\\Seguros Dashboard\\packages\\etl\\storage\\quarantine\\092717f2-b8f9-4ac7-88f9-929b4e7485c7.xlsx",
+          "message": "Workbook does not have ZIP magic bytes."
+        }
+      ]
+    },
+    "reconciliationSummary": {
+      "publishability": "warningOnly",
+      "issues": []
+    }
+  },
+  "artifacts": {
+    "institutions": [
+      {
+        "institutionId": "davivienda",
+        "canonicalCode": "601",
+        "canonicalName": "SEGUROS DAVIVIENDA",
+        "displayName": "Seguros Davivienda",
+        "shortName": "Davivienda",
+        "active": true
+      },
+      {
+        "institutionId": "palic",
+        "canonicalCode": "602",
+        "canonicalName": "PALIC",
+        "displayName": "PALIC",
+        "shortName": "PALIC",
+        "active": true
+      },
+      {
+        "institutionId": "mapfre",
+        "canonicalCode": "603",
+        "canonicalName": "MAPFRE SEGUROS",
+        "displayName": "Mapfre Seguros",
+        "shortName": "Mapfre",
+        "active": true
+      },
+      {
+        "institutionId": "ficohsa",
+        "canonicalCode": "604",
+        "canonicalName": "FICOHSA SEGUROS",
+        "displayName": "Ficohsa Seguros",
+        "shortName": "Ficohsa",
+        "active": true
+      },
+      {
+        "institutionId": "continental",
+        "canonicalCode": "606",
+        "canonicalName": "SEGUROS CONTINENTAL",
+        "displayName": "Seguros Continental",
+        "shortName": "Continental",
+        "active": true
+      },
+      {
+        "institutionId": "atlantida",
+        "canonicalCode": "608",
+        "canonicalName": "SEGUROS ATLÁNTIDA",
+        "displayName": "Seguros Atlántida",
+        "shortName": "Atlántida",
+        "active": true
+      },
+      {
+        "institutionId": "crefisa",
+        "canonicalCode": "609",
+        "canonicalName": "CREFISA",
+        "displayName": "Crefisa",
+        "shortName": "Crefisa",
+        "active": true
+      },
+      {
+        "institutionId": "equidad",
+        "canonicalCode": "612",
+        "canonicalName": "SEGUROS EQUIDAD, S.A.",
+        "displayName": "Seguros Equidad",
+        "shortName": "Equidad",
+        "active": true
+      },
+      {
+        "institutionId": "del-pais",
+        "canonicalCode": "613",
+        "canonicalName": "SEGUROS DEL PAÍS",
+        "displayName": "Seguros del País",
+        "shortName": "Del País",
+        "active": true
+      },
+      {
+        "institutionId": "lafise",
+        "canonicalCode": "615",
+        "canonicalName": "SEGUROS LAFISE",
+        "displayName": "Seguros Lafise",
+        "shortName": "Lafise",
+        "active": true
+      },
+      {
+        "institutionId": "rural",
+        "canonicalCode": "617",
+        "canonicalName": "ASEGURADORA RURAL",
+        "displayName": "Aseguradora Rural",
+        "shortName": "Rural",
+        "active": true
+      },
+      {
+        "institutionId": "assa",
+        "canonicalCode": "618",
+        "canonicalName": "ASSA CIA. DE SEGUROS",
+        "displayName": "ASSA Cia. de Seguros",
+        "shortName": "ASSA",
+        "active": true
+      }
+    ],
+    "insuranceLines": [
+      {
+        "lineId": "accidentes-y-enfermedades",
+        "canonicalName": "ACCIDENTES Y ENFERMEDADES",
+        "displayName": "Accidentes y Enfermedades",
+        "parentLineId": null,
+        "sortOrder": 10
+      },
+      {
+        "lineId": "accidentes-escolares",
+        "canonicalName": "ACCIDENTES ESCOLARES",
+        "displayName": "Accidentes Escolares",
+        "parentLineId": "accidentes-y-enfermedades",
+        "sortOrder": 11
+      },
+      {
+        "lineId": "accidentes-personales",
+        "canonicalName": "ACCIDENTES PERSONALES",
+        "displayName": "Accidentes Personales",
+        "parentLineId": "accidentes-y-enfermedades",
+        "sortOrder": 12
+      },
+      {
+        "lineId": "salud-y-hospitalizacion",
+        "canonicalName": "SALUD Y HOSPITALIZACIÓN",
+        "displayName": "Salud y Hospitalización",
+        "parentLineId": "accidentes-y-enfermedades",
+        "sortOrder": 13
+      },
+      {
+        "lineId": "fianzas",
+        "canonicalName": "FIANZAS",
+        "displayName": "Fianzas",
+        "parentLineId": null,
+        "sortOrder": 20
+      },
+      {
+        "lineId": "fidelidad",
+        "canonicalName": "FIDELIDAD",
+        "displayName": "Fidelidad",
+        "parentLineId": "fianzas",
+        "sortOrder": 21
+      },
+      {
+        "lineId": "garantia",
+        "canonicalName": "GARANTÍA",
+        "displayName": "Garantía",
+        "parentLineId": "fianzas",
+        "sortOrder": 22
+      },
+      {
+        "lineId": "otras-fianzas",
+        "canonicalName": "OTRAS FIANZAS",
+        "displayName": "Otras Fianzas",
+        "parentLineId": "fianzas",
+        "sortOrder": 23
+      },
+      {
+        "lineId": "otros-seguros-generales",
+        "canonicalName": "OTROS SEGUROS GENERALES",
+        "displayName": "Otros Seguros Generales",
+        "parentLineId": null,
+        "sortOrder": 30
+      },
+      {
+        "lineId": "agricola",
+        "canonicalName": "AGRÍCOLA",
+        "displayName": "Agrícola",
+        "parentLineId": "otros-seguros-generales",
+        "sortOrder": 31
+      },
+      {
+        "lineId": "aviacion",
+        "canonicalName": "AVIACIÓN",
+        "displayName": "Aviación",
+        "parentLineId": "otros-seguros-generales",
+        "sortOrder": 32
+      },
+      {
+        "lineId": "banqueros",
+        "canonicalName": "BANQUEROS",
+        "displayName": "Banqueros",
+        "parentLineId": "otros-seguros-generales",
+        "sortOrder": 33
+      },
+      {
+        "lineId": "calderas",
+        "canonicalName": "CALDERAS",
+        "displayName": "Calderas",
+        "parentLineId": "otros-seguros-generales",
+        "sortOrder": 34
+      },
+      {
+        "lineId": "casco-maritimo",
+        "canonicalName": "CASCO MARÍTIMO",
+        "displayName": "Casco Marítimo",
+        "parentLineId": "otros-seguros-generales",
+        "sortOrder": 35
+      },
+      {
+        "lineId": "dinero-y-valores",
+        "canonicalName": "DINERO Y VALORES",
+        "displayName": "Dinero y Valores",
+        "parentLineId": "otros-seguros-generales",
+        "sortOrder": 36
+      },
+      {
+        "lineId": "equipo-de-contratistas",
+        "canonicalName": "EQUIPO DE CONTRATISTAS",
+        "displayName": "Equipo de Contratistas",
+        "parentLineId": "otros-seguros-generales",
+        "sortOrder": 37
+      },
+      {
+        "lineId": "equipo-electronico",
+        "canonicalName": "EQUIPO ELECTRÓNICO",
+        "displayName": "Equipo Electrónico",
+        "parentLineId": "otros-seguros-generales",
+        "sortOrder": 38
+      },
+      {
+        "lineId": "montaje",
+        "canonicalName": "MONTAJE",
+        "displayName": "Montaje",
+        "parentLineId": "otros-seguros-generales",
+        "sortOrder": 39
+      },
+      {
+        "lineId": "otros-ramos",
+        "canonicalName": "OTROS RAMOS",
+        "displayName": "Otros Ramos",
+        "parentLineId": "otros-seguros-generales",
+        "sortOrder": 40
+      },
+      {
+        "lineId": "responsabilidad-civil",
+        "canonicalName": "RESPONSABILIDAD CIVIL",
+        "displayName": "Responsabilidad Civil",
+        "parentLineId": "otros-seguros-generales",
+        "sortOrder": 41
+      },
+      {
+        "lineId": "riesgos-profesionales",
+        "canonicalName": "RIESGOS PROFESIONALES",
+        "displayName": "Riesgos Profesionales",
+        "parentLineId": "otros-seguros-generales",
+        "sortOrder": 42
+      },
+      {
+        "lineId": "robo-y-hurto",
+        "canonicalName": "ROBO Y HURTO",
+        "displayName": "Robo y Hurto",
+        "parentLineId": "otros-seguros-generales",
+        "sortOrder": 43
+      },
+      {
+        "lineId": "rotura-de-cristales",
+        "canonicalName": "ROTURA DE CRISTALES",
+        "displayName": "Rotura de Cristales",
+        "parentLineId": "otros-seguros-generales",
+        "sortOrder": 44
+      },
+      {
+        "lineId": "rotura-de-maquinaria",
+        "canonicalName": "ROTURA DE MAQUINARIA",
+        "displayName": "Rotura de Maquinaria",
+        "parentLineId": "otros-seguros-generales",
+        "sortOrder": 45
+      },
+      {
+        "lineId": "transporte-aereo",
+        "canonicalName": "TRANSPORTE AÉREO",
+        "displayName": "Transporte Aéreo",
+        "parentLineId": "otros-seguros-generales",
+        "sortOrder": 46
+      },
+      {
+        "lineId": "transporte-maritimo",
+        "canonicalName": "TRANSPORTE MARÍTIMO",
+        "displayName": "Transporte Marítimo",
+        "parentLineId": "otros-seguros-generales",
+        "sortOrder": 47
+      },
+      {
+        "lineId": "transporte-terrestre",
+        "canonicalName": "TRANSPORTE TERRESTRE",
+        "displayName": "Transporte Terrestre",
+        "parentLineId": "otros-seguros-generales",
+        "sortOrder": 48
+      },
+      {
+        "lineId": "seguro-de-vida",
+        "canonicalName": "SEGURO DE VIDA",
+        "displayName": "Seguro de Vida",
+        "parentLineId": null,
+        "sortOrder": 50
+      },
+      {
+        "lineId": "seguro-de-sepelio",
+        "canonicalName": "SEGURO DE SEPELIO",
+        "displayName": "Seguro de Sepelio",
+        "parentLineId": "seguro-de-vida",
+        "sortOrder": 51
+      },
+      {
+        "lineId": "vida-colectivo",
+        "canonicalName": "VIDA COLECTIVO",
+        "displayName": "Vida Colectivo",
+        "parentLineId": "seguro-de-vida",
+        "sortOrder": 52
+      },
+      {
+        "lineId": "vida-individual",
+        "canonicalName": "VIDA INDIVIDUAL",
+        "displayName": "Vida Individual",
+        "parentLineId": "seguro-de-vida",
+        "sortOrder": 53
+      },
+      {
+        "lineId": "seguros-generales",
+        "canonicalName": "SEGUROS GENERALES",
+        "displayName": "Seguros Generales",
+        "parentLineId": null,
+        "sortOrder": 60
+      },
+      {
+        "lineId": "incendio-y-lineas-aliadas",
+        "canonicalName": "INCENDIO Y LÍNEAS ALIADAS",
+        "displayName": "Incendio y Líneas Aliadas",
+        "parentLineId": "seguros-generales",
+        "sortOrder": 61
+      },
+      {
+        "lineId": "vehiculos-automotores",
+        "canonicalName": "VEHÍCULOS AUTOMOTORES",
+        "displayName": "Vehículos Automotores",
+        "parentLineId": "seguros-generales",
+        "sortOrder": 62
+      }
+    ],
+    "financialAccounts": [
+      {
+        "accountId": "activos",
+        "lineNumber": 1,
+        "canonicalName": "ACTIVOS",
+        "statementType": "financialPosition",
+        "sortOrder": 1
+      },
+      {
+        "accountId": "disponibilidades",
+        "lineNumber": 2,
+        "canonicalName": "DISPONIBILIDADES",
+        "statementType": "financialPosition",
+        "sortOrder": 2
+      },
+      {
+        "accountId": "inversiones-financieras",
+        "lineNumber": 3,
+        "canonicalName": "INVERSIONES FINANCIERAS",
+        "statementType": "financialPosition",
+        "sortOrder": 3
+      },
+      {
+        "accountId": "prestamos",
+        "lineNumber": 4,
+        "canonicalName": "PRÉSTAMOS",
+        "statementType": "financialPosition",
+        "sortOrder": 4
+      },
+      {
+        "accountId": "primas-por-cobrar",
+        "lineNumber": 5,
+        "canonicalName": "PRIMAS POR COBRAR",
+        "statementType": "financialPosition",
+        "sortOrder": 5
+      },
+      {
+        "accountId": "deudas-reaseguradores",
+        "lineNumber": 6,
+        "canonicalName": "DEUDAS A CARGO DE REASEGURADORES Y REAFIANZADORES",
+        "statementType": "financialPosition",
+        "sortOrder": 6
+      },
+      {
+        "accountId": "activos-venta",
+        "lineNumber": 7,
+        "canonicalName": "ACTIVOS MANTENIDOS PARA LA VENTA Y GRUPO DE ACTIVOS PARA SU DISPOSICIÓN",
+        "statementType": "financialPosition",
+        "sortOrder": 7
+      },
+      {
+        "accountId": "propiedades-planta-equipo",
+        "lineNumber": 8,
+        "canonicalName": "PROPIEDADES, PLANTA Y EQUIPO",
+        "statementType": "financialPosition",
+        "sortOrder": 8
+      },
+      {
+        "accountId": "propiedades-inversion",
+        "lineNumber": 9,
+        "canonicalName": "PROPIEDADES DE INVERSIÓN",
+        "statementType": "financialPosition",
+        "sortOrder": 9
+      },
+      {
+        "accountId": "otros-activos",
+        "lineNumber": 11,
+        "canonicalName": "OTROS ACTIVOS",
+        "statementType": "financialPosition",
+        "sortOrder": 10
+      },
+      {
+        "accountId": "activos-contingentes",
+        "lineNumber": 13,
+        "canonicalName": "ACTIVOS CONTINGENTES",
+        "statementType": "financialPosition",
+        "sortOrder": 11
+      },
+      {
+        "accountId": "total-activos",
+        "lineNumber": 14,
+        "canonicalName": "TOTAL ACTIVOS",
+        "statementType": "financialPosition",
+        "sortOrder": 12
+      },
+      {
+        "accountId": "pasivos",
+        "lineNumber": 15,
+        "canonicalName": "PASIVOS",
+        "statementType": "financialPosition",
+        "sortOrder": 13
+      },
+      {
+        "accountId": "obligaciones-asegurados",
+        "lineNumber": 16,
+        "canonicalName": "OBLIGACIONES CON ASEGURADOS",
+        "statementType": "financialPosition",
+        "sortOrder": 14
+      },
+      {
+        "accountId": "reservas-siniestros",
+        "lineNumber": 17,
+        "canonicalName": "RESERVAS PARA SINIESTROS",
+        "statementType": "financialPosition",
+        "sortOrder": 15
+      },
+      {
+        "accountId": "obligaciones-intermediarios",
+        "lineNumber": 18,
+        "canonicalName": "OBLIGACIONES CON INTERMEDIARIOS",
+        "statementType": "financialPosition",
+        "sortOrder": 16
+      },
+      {
+        "accountId": "cuentas-por-pagar",
+        "lineNumber": 19,
+        "canonicalName": "CUENTAS POR PAGAR",
+        "statementType": "financialPosition",
+        "sortOrder": 17
+      },
+      {
+        "accountId": "obligaciones-financieras",
+        "lineNumber": 20,
+        "canonicalName": "OBLIGACIONES FINANCIERAS",
+        "statementType": "financialPosition",
+        "sortOrder": 18
+      },
+      {
+        "accountId": "obligaciones-reaseguradores",
+        "lineNumber": 21,
+        "canonicalName": "OBLIGACIONES CON REASEGURADORES Y REAFIANZADORES",
+        "statementType": "financialPosition",
+        "sortOrder": 19
+      },
+      {
+        "accountId": "reservas-tecnicas",
+        "lineNumber": 22,
+        "canonicalName": "RESERVAS TÉCNICAS Y MATEMÁTICAS",
+        "statementType": "financialPosition",
+        "sortOrder": 20
+      },
+      {
+        "accountId": "otros-pasivos",
+        "lineNumber": 23,
+        "canonicalName": "OTROS PASIVOS",
+        "statementType": "financialPosition",
+        "sortOrder": 21
+      },
+      {
+        "accountId": "creditos-diferidos",
+        "lineNumber": 24,
+        "canonicalName": "CRÉDITOS DIFERIDOS",
+        "statementType": "financialPosition",
+        "sortOrder": 22
+      },
+      {
+        "accountId": "pasivos-contingentes",
+        "lineNumber": 25,
+        "canonicalName": "PASIVOS CONTINGENTES",
+        "statementType": "financialPosition",
+        "sortOrder": 23
+      },
+      {
+        "accountId": "subtotal-pasivos-patrimonio",
+        "lineNumber": 26,
+        "canonicalName": "SUBTOTAL PASIVOS Y PATRIMONIO",
+        "statementType": "financialPosition",
+        "sortOrder": 24
+      },
+      {
+        "accountId": "patrimonio",
+        "lineNumber": 27,
+        "canonicalName": "PATRIMONIO",
+        "statementType": "financialPosition",
+        "sortOrder": 25
+      },
+      {
+        "accountId": "capital-social",
+        "lineNumber": 28,
+        "canonicalName": "CAPITAL SOCIAL",
+        "statementType": "financialPosition",
+        "sortOrder": 26
+      },
+      {
+        "accountId": "aportes-no-capitalizados",
+        "lineNumber": 29,
+        "canonicalName": "APORTES PATRIMONIALES NO CAPITALIZADOS",
+        "statementType": "financialPosition",
+        "sortOrder": 27
+      },
+      {
+        "accountId": "resultados-acumulados",
+        "lineNumber": 30,
+        "canonicalName": "RESULTADOS ACUMULADOS",
+        "statementType": "financialPosition",
+        "sortOrder": 28
+      },
+      {
+        "accountId": "resultado-neto",
+        "lineNumber": 31,
+        "canonicalName": "RESULTADO NETO DEL EJERCICIO",
+        "statementType": "financialPosition",
+        "sortOrder": 29
+      },
+      {
+        "accountId": "patrimonio-restringido",
+        "lineNumber": 32,
+        "canonicalName": "PATRIMONIO RESTRINGIDO NO DISTRIBUIBLE",
+        "statementType": "financialPosition",
+        "sortOrder": 30
+      },
+      {
+        "accountId": "total-pasivos-patrimonio",
+        "lineNumber": 33,
+        "canonicalName": "TOTAL PASIVOS Y PATRIMONIO",
+        "statementType": "financialPosition",
+        "sortOrder": 31
+      },
+      {
+        "accountId": "cuentas-orden",
+        "lineNumber": 34,
+        "canonicalName": "CUENTAS DE ORDEN Y REGISTRO",
+        "statementType": "financialPosition",
+        "sortOrder": 32
+      }
+    ],
+    "premiumFacts": [],
+    "financialPositionFacts": [],
+    "executiveKpis": [],
+    "premiumsByInstitution": [],
+    "premiumsByLine": [],
+    "financialHighlightsByInstitution": [],
+    "rankings": {}
+  }
+}

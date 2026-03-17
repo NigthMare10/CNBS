@@ -1,0 +1,31 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noEmit": true,
+    "allowJs": false,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "baseUrl": ".",
+    "paths": {
+      "@cnbs/charts": ["packages/charts/src/index.ts"],
+      "@cnbs/config": ["packages/config/index.ts"],
+      "@cnbs/domain": ["packages/domain/src/index.ts"],
+      "@cnbs/etl": ["packages/etl/src/index.ts"],
+      "@cnbs/schemas": ["packages/schemas/src/index.ts"],
+      "@cnbs/testing": ["packages/testing/src/index.ts"],
+      "@cnbs/ui": ["packages/ui/src/index.ts"]
+    }
+  },
+  "exclude": ["node_modules", "dist", ".next"]
+}
