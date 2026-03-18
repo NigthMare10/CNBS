@@ -196,12 +196,6 @@ Important:
 - premiums views rendered as unavailable
 - charts needing premiums remain unavailable
 
-### Income Statement Only
-
-- upload is classified and traced
-- publication is blocked because no operational source was provided
-- the workbook is never silently remapped to premiums or balance
-
 ### Combined
 
 - both operational domains available

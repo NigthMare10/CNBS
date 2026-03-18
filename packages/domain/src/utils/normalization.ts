@@ -11,10 +11,14 @@ import type {
   Institution,
   InsuranceLine
 } from "../entities/canonical";
-import { normalizeText } from "./text";
+import { normalizeText, repairMojibake } from "./text";
+
+export function normalizeAliasInput(value: string): string {
+  return normalizeText(repairMojibake(value));
+}
 
 function normalizeInstitutionAlias(value: string): string {
-  return normalizeText(value)
+  return normalizeAliasInput(value)
     .replace(/[.,]/g, " ")
     .replace(/\bSOCIEDAD ANONIMA\b/g, " ")
     .replace(/\bS A\b/g, " ")
@@ -31,8 +35,8 @@ function byAlias<T extends { alias: string }>(
   value: string,
   key: keyof T
 ): string | null {
-  const normalized = normalizeText(value);
-  const found = aliases.find((entry) => normalizeText(entry.alias) === normalized);
+  const normalized = normalizeAliasInput(value);
+  const found = aliases.find((entry) => normalizeAliasInput(entry.alias) === normalized);
   const resolved = found?.[key];
   return typeof resolved === "string" ? resolved : null;
 }
@@ -52,7 +56,7 @@ export function resolveInstitution(value: string): Institution | null {
 export function resolveInsuranceLine(value: string): InsuranceLine | null {
   const lineId =
     byAlias(insuranceLineAliases, value, "lineId") ??
-    insuranceLinesCatalog.find((item) => normalizeText(item.canonicalName) === normalizeText(value))?.lineId ??
+    insuranceLinesCatalog.find((item) => normalizeAliasInput(item.canonicalName) === normalizeAliasInput(value))?.lineId ??
     null;
 
   return insuranceLinesCatalog.find((item) => item.lineId === lineId) ?? null;
@@ -61,8 +65,32 @@ export function resolveInsuranceLine(value: string): InsuranceLine | null {
 export function resolveFinancialAccount(value: string): FinancialAccount | null {
   const accountId =
     byAlias(financialAccountAliases, value, "accountId") ??
-    financialAccountsCatalog.find((item) => normalizeText(item.canonicalName) === normalizeText(value))?.accountId ??
+    financialAccountsCatalog.find((item) => normalizeAliasInput(item.canonicalName) === normalizeAliasInput(value))?.accountId ??
     null;
 
   return financialAccountsCatalog.find((item) => item.accountId === accountId) ?? null;
+}
+
+export function resolveFinancialAccountWithFallback(value: string, lineNumber?: number): {
+  account: FinancialAccount | null;
+  normalizedValue: string;
+  candidate: FinancialAccount | null;
+  strategy: "alias" | "line-number" | "unresolved";
+} {
+  const normalizedValue = normalizeAliasInput(value);
+  const exact = resolveFinancialAccount(value);
+  if (exact) {
+    return { account: exact, normalizedValue, candidate: exact, strategy: "alias" };
+  }
+
+  const lineCandidate = typeof lineNumber === "number"
+    ? financialAccountsCatalog.find((item) => item.lineNumber === lineNumber) ?? null
+    : null;
+
+  if (lineCandidate) {
+    return { account: lineCandidate, normalizedValue, candidate: lineCandidate, strategy: "line-number" };
+  }
+
+  const candidate = financialAccountsCatalog.find((item) => normalizeAliasInput(item.canonicalName).includes(normalizedValue) || normalizedValue.includes(normalizeAliasInput(item.canonicalName))) ?? null;
+  return { account: null, normalizedValue, candidate, strategy: "unresolved" };
 }

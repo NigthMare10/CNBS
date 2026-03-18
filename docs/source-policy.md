@@ -45,14 +45,14 @@ Blocked combination:
 - publish premiums domain
 - publish rankings and market share based on premiums
 - mark financial domain as unavailable
-- claims and income statement remain unavailable
+- claims remain unavailable
 
 ### Financial Position Only
 
 - publish financial position domain
 - publish institutional financial highlights
 - mark premiums domain as unavailable
-- claims and income statement remain unavailable
+- claims remain unavailable
 
 ### Combined
 

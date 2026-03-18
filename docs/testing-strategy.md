@@ -33,6 +33,7 @@
 - arbitrary workbook filenames do not affect correct classification
 - premiums + detected incomeStatement still publish only operational domains without fake balance values
 - incomeStatement-only upload is blocked as non-operational under the current two-source policy
+- balance-derived reserves KPI and reserves ranking are published when financial position is present
 - localized timestamp formatting remains stable and explicit in admin/public views
 - staging run to dataset version traceability is visible in admin views
 

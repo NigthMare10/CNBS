@@ -1,5 +1,5 @@
 import { mkdtemp, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, it } from "vitest";
 import { mapMultipartUploadsToInputs } from "./upload-filter";
@@ -19,5 +19,23 @@ describe("mapMultipartUploadsToInputs", () => {
 
     expect(files).toHaveLength(1);
     expect(files[0]?.originalFilename).toBe("Primas.xlsx");
+  });
+
+  it("preserves both real uploaded xlsx files when multiple files are selected", async () => {
+    const files = await mapMultipartUploadsToInputs([
+      {
+        filepath: resolve(process.cwd(), "..", "..", "Primas (3).xlsx"),
+        filename: "Primas (3).xlsx",
+        mimetype: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      },
+      {
+        filepath: resolve(process.cwd(), "..", "..", "EstadoSituacionFinanciera (2).xlsx"),
+        filename: "EstadoSituacionFinanciera (2).xlsx",
+        mimetype: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      }
+    ]);
+
+    expect(files).toHaveLength(2);
+    expect(files.map((file) => file.originalFilename).sort()).toEqual(["EstadoSituacionFinanciera (2).xlsx", "Primas (3).xlsx"]);
   });
 });

@@ -32,6 +32,30 @@ It is not an operational runtime source.
 
 Therefore, formulas that depend on explicit result-domain raw inputs are documented but not published as official public runtime metrics.
 
+## Implemented Public Formulas from the Two Operational Sources
+
+### From Premiums
+
+- `total-premiums = sum(Saldo)`
+- `premiums-by-institution = sum(Saldo) group by institution`
+- `premiums-by-line = sum(Saldo) group by ramo`
+- `market-share = premiums-by-institution / total-premiums`
+
+### From Financial Position
+
+- `total-assets = sum(amountCombined where accountId = total-activos)`
+- `equity = sum(amountCombined where accountId = patrimonio)`
+- `technical-reserves = sum(amountCombined where accountId = reservas-tecnicas)`
+
+### Public Visualizations Backed by Those Formulas
+
+- market share donut by institution
+- top premiums by institution
+- premiums by ramo
+- top assets by institution
+- technical reserves by institution
+- rankings for premiums, assets, equity, and reserves
+
 ## Useful Runtime Visualizations Added
 
 - market share donut by institution from premiums

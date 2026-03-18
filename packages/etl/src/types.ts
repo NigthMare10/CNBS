@@ -85,6 +85,12 @@ export interface StagedIngestionRun {
   publishedDatasetVersionId: string | null;
   publishedAt: string | null;
   sourceFiles: SourceFileRecord[];
+  mappingSummary: {
+    repairedByNormalization: number;
+    aliasesMatched: number;
+    lineNumberFallback: number;
+    unresolved: number;
+  };
   validationSummary: ValidationSummary;
   reconciliationSummary: ReconciliationSummary;
   draftDatasetVersion: DatasetVersionRecord;

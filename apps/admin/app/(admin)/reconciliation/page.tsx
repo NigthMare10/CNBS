@@ -70,6 +70,10 @@ export default async function ReconciliationPage() {
   const reconciliationIssues = issuesOf(latest.reconciliationSummary);
   const validationCounts = countBySeverity(validationIssues);
   const reconciliationCounts = countBySeverity(reconciliationIssues);
+  const unresolvedAliasIssues = validationIssues.filter((issue) => {
+    const code = stringValue(issue.code);
+    return code === "FINANCIAL_ACCOUNT_ALIAS_UNRESOLVED" || code === "INSURANCE_LINE_ALIAS_UNRESOLVED";
+  });
 
   return (
     <div className="admin-page">
@@ -118,6 +122,52 @@ export default async function ReconciliationPage() {
           <div className="admin-inline-note">
             Revisa primero los contadores de severidad. Si no existen discrepancias bloqueantes, la corrida puede continuar al paso de publicación. Horario mostrado en {adminTimeZoneLabel()}.
           </div>
+        </div>
+
+        <div className="admin-grid-2" style={{ marginTop: 22 }}>
+          <Card title="Resumen de normalización" subtitle="Qué se reparó y qué sigue pendiente durante el matching de aliases.">
+            <div className="admin-meta-list">
+              <div className="admin-meta-item">
+                <span className="admin-meta-item__label">Aliases reparados por normalización</span>
+                <span className="admin-meta-item__value">{Number((latest.mappingSummary as Record<string, unknown> | undefined)?.repairedByNormalization ?? 0)}</span>
+              </div>
+              <div className="admin-meta-item">
+                <span className="admin-meta-item__label">Aliases resueltos</span>
+                <span className="admin-meta-item__value">{Number((latest.mappingSummary as Record<string, unknown> | undefined)?.aliasesMatched ?? 0)}</span>
+              </div>
+              <div className="admin-meta-item">
+                <span className="admin-meta-item__label">Fallback por línea</span>
+                <span className="admin-meta-item__value">{Number((latest.mappingSummary as Record<string, unknown> | undefined)?.lineNumberFallback ?? 0)}</span>
+              </div>
+              <div className="admin-meta-item">
+                <span className="admin-meta-item__label">Aliases aún no resueltos</span>
+                <span className="admin-meta-item__value">{Number((latest.mappingSummary as Record<string, unknown> | undefined)?.unresolved ?? 0)}</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card title="Detalles de aliases no resueltos" subtitle="Muestra original, valor normalizado y candidato canónico si existe.">
+            {unresolvedAliasIssues.length > 0 ? (
+              <div className="admin-list">
+                {unresolvedAliasIssues.slice(0, 8).map((issue, index) => {
+                  const details = typeof issue.details === "object" && issue.details !== null ? (issue.details as Record<string, unknown>) : {};
+                  return (
+                    <div className="admin-list-row" key={`${stringValue(issue.scope)}-${index}`}>
+                      <div className="admin-list-row__content">
+                        <span className="admin-list-row__title">{stringValue(issue.message, "Alias no resuelto")}</span>
+                        <span className="admin-list-row__meta">
+                          Original: {stringValue(details.originalAccount, stringValue(details.originalRamo, "n/d"))} · Normalizado: {stringValue(details.normalizedAccount, stringValue(details.normalizedRamo, "n/d"))} · Candidato: {stringValue(details.candidateCanonical, "sin candidato")}
+                        </span>
+                      </div>
+                      <Badge>{stringValue(details.ambiguity, "unresolved")}</Badge>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="admin-alert--success">No quedaron aliases sin resolver en esta corrida.</div>
+            )}
+          </Card>
         </div>
 
         <div className="admin-section-divider" style={{ margin: "22px 0" }} />

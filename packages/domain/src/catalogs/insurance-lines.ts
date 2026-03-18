@@ -28,6 +28,7 @@ export const insuranceLinesCatalog: InsuranceLine[] = [
   { lineId: "transporte-aereo", canonicalName: "TRANSPORTE AÉREO", displayName: "Transporte Aéreo", parentLineId: "otros-seguros-generales", sortOrder: 46 },
   { lineId: "transporte-maritimo", canonicalName: "TRANSPORTE MARÍTIMO", displayName: "Transporte Marítimo", parentLineId: "otros-seguros-generales", sortOrder: 47 },
   { lineId: "transporte-terrestre", canonicalName: "TRANSPORTE TERRESTRE", displayName: "Transporte Terrestre", parentLineId: "otros-seguros-generales", sortOrder: 48 },
+  { lineId: "ganadero", canonicalName: "GANADERO", displayName: "Ganadero", parentLineId: "otros-seguros-generales", sortOrder: 49 },
   { lineId: "seguro-de-vida", canonicalName: "SEGURO DE VIDA", displayName: "Seguro de Vida", parentLineId: null, sortOrder: 50 },
   { lineId: "seguro-de-sepelio", canonicalName: "SEGURO DE SEPELIO", displayName: "Seguro de Sepelio", parentLineId: "seguro-de-vida", sortOrder: 51 },
   { lineId: "vida-colectivo", canonicalName: "VIDA COLECTIVO", displayName: "Vida Colectivo", parentLineId: "seguro-de-vida", sortOrder: 52 },
@@ -57,5 +58,7 @@ export const insuranceLineAliases: InsuranceLineAlias[] = [
   { alias: "AGRICOLA", lineId: "agricola", source: "dictionary" },
   { alias: "TRANSPORTE AEREO", lineId: "transporte-aereo", source: "dictionary" },
   { alias: "TRANSPORTE MARITIMO", lineId: "transporte-maritimo", source: "dictionary" },
+  { alias: "GANADERO", lineId: "ganadero", source: "dictionary" },
+  { alias: "OTROS SEGUROS GENERALES / GANADERO", lineId: "ganadero", source: "dictionary" },
   { alias: "SEGURO DE VIDA", lineId: "seguro-de-vida", source: "dictionary" }
 ];

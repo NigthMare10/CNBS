@@ -38,7 +38,33 @@ export const financialAccountsCatalog: FinancialAccount[] = [
 export const financialAccountAliases: FinancialAccountAlias[] = [
   { alias: "TOTAL ACTIVOS", accountId: "total-activos", source: "dictionary" },
   { alias: "ACTIVOS TOTALES", accountId: "total-activos", source: "dictionary" },
+  { alias: "PRESTAMOS", accountId: "prestamos", source: "dictionary" },
+  { alias: "PRÉSTAMOS", accountId: "prestamos", source: "dictionary" },
+  { alias: "PRÃ©STAMOS", accountId: "prestamos", source: "dictionary" },
+  {
+    alias: "ACTIVOS MANTENIDOS PARA LA VENTA Y GRUPO DE ACTIVOS PARA SU DISPOSICION",
+    accountId: "activos-venta",
+    source: "dictionary"
+  },
+  {
+    alias: "ACTIVOS MANTENIDOS PARA LA VENTA Y GRUPO DE ACTIVOS PARA SU DISPOSICIÓN",
+    accountId: "activos-venta",
+    source: "dictionary"
+  },
+  {
+    alias: "ACTIVOS MANTENIDOS PARA LA VENTA Y GRUPO DE ACTIVOS PARA SU DISPOSICIÃ“N",
+    accountId: "activos-venta",
+    source: "dictionary"
+  },
+  { alias: "PROPIEDADES DE INVERSION", accountId: "propiedades-inversion", source: "dictionary" },
+  { alias: "PROPIEDADES DE INVERSIÓN", accountId: "propiedades-inversion", source: "dictionary" },
+  { alias: "PROPIEDADES DE INVERSIÃ“N", accountId: "propiedades-inversion", source: "dictionary" },
   { alias: "RESERVAS TECNICAS Y MATEMATICAS", accountId: "reservas-tecnicas", source: "dictionary" },
+  { alias: "RESERVAS TÉCNICAS Y MATEMÁTICAS", accountId: "reservas-tecnicas", source: "dictionary" },
+  { alias: "RESERVAS TÃ‰CNICAS Y MATEMÃÁTICAS", accountId: "reservas-tecnicas", source: "dictionary" },
+  { alias: "CREDITOS DIFERIDOS", accountId: "creditos-diferidos", source: "dictionary" },
+  { alias: "CRÉDITOS DIFERIDOS", accountId: "creditos-diferidos", source: "dictionary" },
+  { alias: "CRÃ©DITOS DIFERIDOS", accountId: "creditos-diferidos", source: "dictionary" },
   { alias: "PATRIMONIO RESTRINGIDO NO DISTRIBUIBLE", accountId: "patrimonio-restringido", source: "dictionary" },
   { alias: "CUENTAS DE ORDEN Y REGISTRO", accountId: "cuentas-orden", source: "dictionary" }
 ];

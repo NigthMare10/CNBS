@@ -2,9 +2,10 @@ import {
   financialAccountsCatalog,
   insuranceLinesCatalog,
   institutionsCatalog,
-  resolveFinancialAccount,
+  resolveFinancialAccountWithFallback,
   resolveInstitution,
-  resolveInsuranceLine
+  resolveInsuranceLine,
+  repairMojibake
 } from "@cnbs/domain";
 import type {
   BusinessPeriod,
@@ -38,12 +39,16 @@ export function normalizePremiumFacts(input: {
   datasetVersionId: string;
   sourceFile: SourceFileRecord;
   rows: ParsedPremiumRow[];
-}): { facts: PremiumFact[]; period: BusinessPeriod | undefined; issues: ValidationIssue[] } {
+}): { facts: PremiumFact[]; period: BusinessPeriod | undefined; issues: ValidationIssue[]; stats: { repairedByNormalization: number; aliasesMatched: number; unresolved: number } } {
   const issues: ValidationIssue[] = [];
   const period = input.rows[0] ? parseExcelSerialDate(input.rows[0].reportDateRaw) : undefined;
   const facts: PremiumFact[] = [];
+  const stats = { repairedByNormalization: 0, aliasesMatched: 0, unresolved: 0 };
 
   for (const row of input.rows) {
+    if (repairMojibake(row.ramoRaw) !== row.ramoRaw || repairMojibake(row.ramoParentRaw) !== row.ramoParentRaw) {
+      stats.repairedByNormalization += 1;
+    }
     const institution = resolveInstitution(row.institutionNameRaw);
     const ramoParent = resolveInsuranceLine(row.ramoParentRaw);
     const ramo = resolveInsuranceLine(row.ramoRaw);
@@ -60,15 +65,24 @@ export function normalizePremiumFacts(input: {
     }
 
     if (!ramoParent || !ramo) {
+      stats.unresolved += 1;
       issues.push({
         code: "INSURANCE_LINE_ALIAS_UNRESOLVED",
         severity: "high",
         status: "failed",
         scope: `premiums:row:${row.rowNumber}`,
-        message: `Unable to resolve ramo mapping for ${row.ramoParentRaw} / ${row.ramoRaw}.`
+        message: `Unable to resolve ramo mapping for ${row.ramoParentRaw} / ${row.ramoRaw}.`,
+        details: {
+          originalRamoParent: row.ramoParentRaw,
+          originalRamo: row.ramoRaw,
+          normalizedRamoParent: repairMojibake(row.ramoParentRaw),
+          normalizedRamo: repairMojibake(row.ramoRaw)
+        }
       });
       continue;
     }
+
+    stats.aliasesMatched += 1;
 
     facts.push({
       datasetVersionId: input.datasetVersionId,
@@ -84,21 +98,35 @@ export function normalizePremiumFacts(input: {
     });
   }
 
-  return { facts, period, issues };
+  return { facts, period, issues, stats };
 }
 
 export function normalizeFinancialPositionFacts(input: {
   datasetVersionId: string;
   sourceFile: SourceFileRecord;
   rows: ParsedFinancialPositionRow[];
-}): { facts: FinancialPositionFact[]; period: BusinessPeriod | undefined; issues: ValidationIssue[] } {
+}): {
+  facts: FinancialPositionFact[];
+  period: BusinessPeriod | undefined;
+  issues: ValidationIssue[];
+  stats: { repairedByNormalization: number; aliasesMatched: number; lineNumberFallback: number; unresolved: number };
+} {
   const issues: ValidationIssue[] = [];
   const period = input.rows[0] ? parseExcelSerialDate(input.rows[0].reportDateRaw) : undefined;
   const facts: FinancialPositionFact[] = [];
+  const stats = { repairedByNormalization: 0, aliasesMatched: 0, lineNumberFallback: 0, unresolved: 0 };
 
   for (const row of input.rows) {
     const institution = resolveInstitution(row.institutionNameRaw);
-    const account = resolveFinancialAccount(row.accountRaw);
+    const accountResolution = resolveFinancialAccountWithFallback(
+      row.accountRaw,
+      typeof row.lineNumberRaw === "number" ? row.lineNumberRaw : Number(row.lineNumberRaw)
+    );
+    const account = accountResolution.account;
+
+    if (repairMojibake(row.accountRaw) !== row.accountRaw) {
+      stats.repairedByNormalization += 1;
+    }
 
     if (!institution) {
       issues.push({
@@ -112,14 +140,29 @@ export function normalizeFinancialPositionFacts(input: {
     }
 
     if (!account) {
+      stats.unresolved += 1;
       issues.push({
         code: "FINANCIAL_ACCOUNT_ALIAS_UNRESOLVED",
         severity: "high",
         status: "failed",
         scope: `financialPosition:row:${row.rowNumber}`,
-        message: `Unable to resolve account ${row.accountRaw}.`
+        message: `Unable to resolve account ${row.accountRaw}.`,
+        details: {
+          originalAccount: row.accountRaw,
+          normalizedAccount: accountResolution.normalizedValue,
+          lineNumber: row.lineNumberRaw,
+          candidateCanonical: accountResolution.candidate?.canonicalName,
+          resolutionStrategy: accountResolution.strategy,
+          ambiguity: accountResolution.candidate ? "candidate-found-but-no-safe-resolution" : "no-candidate"
+        }
       });
       continue;
+    }
+
+    if (accountResolution.strategy === "line-number") {
+      stats.lineNumberFallback += 1;
+    } else {
+      stats.aliasesMatched += 1;
     }
 
     const amountNational = numberValue(row.amountNationalRaw);
@@ -140,7 +183,7 @@ export function normalizeFinancialPositionFacts(input: {
     });
   }
 
-  return { facts, period, issues };
+  return { facts, period, issues, stats };
 }
 
 export function normalizeIncomeStatementRows(input: {

@@ -27,6 +27,11 @@ const workbookFixtures = {
   )
 };
 
+const realWorkbookVariants = {
+  premiums3: resolve(process.cwd(), "..", "..", "Primas (3).xlsx"),
+  financialPosition2: resolve(process.cwd(), "..", "..", "EstadoSituacionFinanciera (2).xlsx")
+};
+
 describe("IngestionService", () => {
   const storage = new LocalStorageRepository();
   const service = new IngestionService(storage);
@@ -181,6 +186,7 @@ describe("IngestionService", () => {
     const overview = await service.getPublicOverview();
     expect(Array.isArray(overview.premiumsByInstitution)).toBe(true);
     expect(Array.isArray(overview.financialHighlights)).toBe(true);
+    expect(Array.isArray(overview.incomeStatementHighlights)).toBe(true);
   });
 
   it("publishes a financial-only dataset with partial metadata", async () => {
@@ -231,6 +237,10 @@ describe("IngestionService", () => {
     expect(published.datasetScope).toBe("premiums-financial");
     expect(published.domainAvailability.financialPosition.sourceProvided).toBe(true);
     expect(published.domainAvailability.reference.sourceProvided).toBe(false);
+
+    const overview = await service.getPublicOverview();
+    expect((overview.executiveKpis as Array<{ key: string }>).some((kpi) => kpi.key === "total-reserves")).toBe(true);
+    expect((overview.executiveKpis as Array<{ key: string }>).some((kpi) => kpi.key === "total-net-income")).toBe(false);
   });
 
   it("blocks a reference-only upload because no primary source is present", async () => {
@@ -293,6 +303,10 @@ describe("IngestionService", () => {
     expect(published.domainAvailability.incomeStatement.sourceProvided).toBe(true);
     expect(published.domainAvailability.incomeStatement.publishable).toBe(false);
     expect(published.domainAvailability.financialPosition.publishable).toBe(false);
+
+    const overview = await service.getPublicOverview();
+    expect(Array.isArray(overview.incomeStatementHighlights)).toBe(true);
+    expect((overview.incomeStatementHighlights as unknown[]).length).toBe(0);
   });
 
   it("publishes a financial plus incomeStatement upload as financial-only operational dataset", async () => {
@@ -315,5 +329,33 @@ describe("IngestionService", () => {
     expect(published.domainAvailability.incomeStatement.sourceProvided).toBe(true);
     expect(published.domainAvailability.incomeStatement.publishable).toBe(false);
     expect(published.domainAvailability.financialPosition.publishable).toBe(true);
+  });
+
+  it("does not block the real premiums + financialPosition 2025 files after mojibake repair and alias hardening", async () => {
+    const run = await service.ingestWorkbookSet({
+      uploadedBy: "tester",
+      files: [
+        {
+          filePath: realWorkbookVariants.premiums3,
+          originalFilename: "Primas (3).xlsx",
+          mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          sizeBytes: 100000
+        },
+        {
+          filePath: realWorkbookVariants.financialPosition2,
+          originalFilename: "EstadoSituacionFinanciera (2).xlsx",
+          mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          sizeBytes: 100000
+        }
+      ]
+    });
+
+    expect(run.sourceFiles).toHaveLength(2);
+    expect(run.sourceFiles.map((file) => file.kind).sort()).toEqual(["financialPosition", "premiums"]);
+    expect(run.validationSummary.publishability).not.toBe("blocked");
+    expect(run.validationSummary.issues.some((issue) => issue.code === "FINANCIAL_ACCOUNT_ALIAS_UNRESOLVED")).toBe(false);
+    expect(run.validationSummary.issues.some((issue) => issue.code === "INSURANCE_LINE_ALIAS_UNRESOLVED")).toBe(false);
+    expect(run.draftDatasetVersion.domainAvailability.financialPosition.sourceProvided).toBe(true);
+    expect(run.draftDatasetVersion.datasetScope).toBe("premiums-financial");
   });
 });

@@ -216,14 +216,14 @@ export class IngestionService {
           sourceFile: premiumsFile,
           rows: premiumRows
         })
-      : { facts: [], period: undefined, issues: [] };
+      : { facts: [], period: undefined, issues: [], stats: { repairedByNormalization: 0, aliasesMatched: 0, unresolved: 0 } };
     const normalizedFinancials = financialFile
       ? normalizeFinancialPositionFacts({
           datasetVersionId,
           sourceFile: financialFile,
           rows: financialRows
         })
-      : { facts: [], period: undefined, issues: [] };
+      : { facts: [], period: undefined, issues: [], stats: { repairedByNormalization: 0, aliasesMatched: 0, lineNumberFallback: 0, unresolved: 0 } };
     const normalizedIncomeStatement = incomeStatementFile
       ? normalizeIncomeStatementRows({
           datasetVersionId,
@@ -313,6 +313,13 @@ export class IngestionService {
       publishedDatasetVersionId: null,
       publishedAt: null,
       sourceFiles: storedFiles,
+      mappingSummary: {
+        repairedByNormalization:
+          normalizedPremiums.stats.repairedByNormalization + normalizedFinancials.stats.repairedByNormalization,
+        aliasesMatched: normalizedPremiums.stats.aliasesMatched + normalizedFinancials.stats.aliasesMatched,
+        lineNumberFallback: normalizedFinancials.stats.lineNumberFallback,
+        unresolved: normalizedPremiums.stats.unresolved + normalizedFinancials.stats.unresolved
+      },
       validationSummary: normalizationSummary,
       reconciliationSummary,
       draftDatasetVersion,
@@ -660,6 +667,12 @@ export class IngestionService {
       publishedDatasetVersionId: null,
       publishedAt: null,
       sourceFiles,
+      mappingSummary: {
+        repairedByNormalization: 0,
+        aliasesMatched: 0,
+        lineNumberFallback: 0,
+        unresolved: 0
+      },
       validationSummary,
       reconciliationSummary,
       draftDatasetVersion: {
