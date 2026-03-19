@@ -1,89 +1,83 @@
-# Source Policy
+# Politica de Fuentes
 
-## Operational Sources
+## Regla operativa vigente
 
-The CNBS Dashboard classifies uploads by workbook structure and semantic content, not by filename.
+La primera version operativa del dashboard CNBS usa solo dos fuentes primarias para publicacion publica:
 
-Primary operational workbook types:
+1. `premiums`
+2. `financialPosition`
 
-1. premiums
-2. financial position
+El informe preliminar no es fuente runtime. Solo se usa como:
 
-Additional detectable but non-operational type:
+- oraculo de formulas
+- oraculo de cuadros
+- referencia semantica de nombres y relaciones
 
-- income statement
+`incomeStatement` puede detectarse y trazarse, pero no cambia la politica operativa publica actual.
 
-The reference workbook (`INFORME_FINANCIERO_PRELIMINAR...xlsx`) remains optional and non-authoritative.
+## Clasificacion
 
-## Upload Policy
+- los archivos se clasifican por estructura, headers y senales semanticas
+- el nombre del archivo no define el dominio de negocio
+- si la clasificacion no es segura, la corrida se bloquea
 
-Accepted operational combinations:
+## Combinaciones aceptadas
 
-- premiums only
-- financial position only
-- premiums + financial position
-- premiums + financial position + optional reference
-- premiums + optional reference
-- financial position + optional reference
-- premiums + financial position + detected income statement
-- premiums + detected income statement
-- financial position + detected income statement
-- any of the above + optional reference
-- premiums + optional reference
-- financial position + optional reference
+- `premiums` solo
+- `financialPosition` solo
+- `premiums + financialPosition`
+- cualquiera de las anteriores con `reference` opcional
+- cualquiera de las anteriores con `incomeStatement` detectable y no operativo
 
-Blocked combination:
+## Combinaciones bloqueadas
 
-- reference only
-- no primary source at all
-- unclassified workbook with insufficient structural confidence
+- `reference` solo
+- `incomeStatement` solo
+- ningun workbook primario
+- workbook no clasificado con confianza insuficiente
 
-## Publication Behavior
+## Comportamiento de publicacion
 
-### Premiums Only
+### `premiums-only`
 
-- publish premiums domain
-- publish rankings and market share based on premiums
-- mark financial domain as unavailable
-- claims remain unavailable
+- publica metricas y artefactos de primas
+- deja el dominio financiero como no disponible
+- no inventa claims ni resultados
 
-### Financial Position Only
+### `financial-only`
 
-- publish financial position domain
-- publish institutional financial highlights
-- mark premiums domain as unavailable
-- claims remain unavailable
+- publica highlights y rankings financieros soportados
+- deja el dominio de primas como no disponible
+- no inventa claims ni resultados
 
-### Combined
+### `premiums-financial`
 
-- publish the domains that were actually supplied and classified with confidence
-- dataset scope reflects the exact combination detected
+- publica ambos dominios operativos
+- habilita KPIs y vistas institucionales derivables con integridad
 
-### Detected Income Statement Workbook
+## Regla sobre `datasetScope`
 
-- may be classified and traced in source files
-- is not treated as operational source for public publication
-- cannot by itself produce a publishable runtime dataset
-- if uploaded together with premiums or financial position, the public dataset still reflects only the two operational sources
+En la implementacion actual, `datasetScope` publicado se mantiene en estos estados operativos:
 
-### Optional Reference Provided
+- `premiums-only`
+- `financial-only`
+- `premiums-financial`
+- `empty`
 
-- use it only for reconciliation and chart specification alignment
-- do not require it for upload, publish, active version, or public runtime
+Si aparece `incomeStatement` junto a un dominio operativo, se conserva para trazabilidad, pero no altera el `datasetScope` publico.
 
-## Non-Supported Domains in Phase 1
+## Dominios y series no soportados en fase piloto
 
-- official claims facts
-- operational income statement publication
-- claims-to-premium ratios based on authoritative claims source
-- interannual 2025 vs 2024 comparisons when no raw historical publication exists
+- claims oficiales
+- relaciones siniestros / primas con fuente autoritativa
+- series historicas homogeneas 2025 vs 2024 si no existen raw publications equivalentes
+- publicacion operativa del `incomeStatement`
 
-## Classification Policy
+## Regla de honestidad
 
-- filenames are ignored for business classification
-- workbooks are scored using:
-  - sheet names
-  - canonicalized headers
-  - semantic account markers
-  - workbook structure
-- if confidence is insufficient, the file is marked unclassified and the run is blocked with an actionable message
+Cuando una vista, ranking o grafico no puede derivarse con integridad desde `premiums` o `financialPosition`, el sistema debe:
+
+- responder con estado seguro
+- mostrar `Dato no disponible`
+- explicar que fuente o dominio falta
+- no extrapolar ni completar con supuestos

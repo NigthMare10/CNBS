@@ -1,5 +1,4 @@
 import { Badge, Card, SectionHeading } from "@cnbs/ui";
-import { AdminPagination } from "../../../components/admin-pagination";
 import { DetectedWorkbooksList } from "../../../components/detected-workbooks-list";
 import { JsonViewerWithCopy } from "../../../components/json-viewer-with-copy";
 import { WorkbookClassificationSummary } from "../../../components/workbook-classification-summary";
@@ -73,13 +72,15 @@ function renderResolutionMeta(example: {
   return segments.join(" · ");
 }
 
-export default async function ReconciliationPage() {
+export default async function ReconciliationPage({ searchParams }: { searchParams: Promise<{ runId?: string }> }) {
   const session = await requireAdminSession();
-  const runsResponse = await getAdminJson<{ items: Array<Record<string, unknown>>; page: number; totalPages: number }>(
-    "/api/admin/ingestions?page=1&pageSize=1&detail=full",
-    session
-  );
-  const latest = runsResponse.items.at(0);
+  const params = await searchParams;
+  const latest = params.runId
+    ? await getAdminJson<Record<string, unknown>>(`/api/admin/ingestions/${params.runId}`, session)
+    : (await getAdminJson<{ items: Array<Record<string, unknown>>; page: number; totalPages: number }>(
+        "/api/admin/ingestions?page=1&pageSize=1&detail=full",
+        session
+      )).items.at(0);
 
   if (!latest) {
     return (
@@ -377,8 +378,6 @@ export default async function ReconciliationPage() {
 
         <JsonViewerWithCopy summary="Ver JSON completo de la corrida" value={latest} />
       </Card>
-
-      <AdminPagination basePath="/ingestions" page={runsResponse.page} totalPages={runsResponse.totalPages} />
     </div>
   );
 }

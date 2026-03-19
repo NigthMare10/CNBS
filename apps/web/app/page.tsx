@@ -42,6 +42,13 @@ export default async function HomePage() {
 
   return (
     <div style={{ display: "grid", gap: 40 }}>
+      {!metadata ? (
+        <EmptyState
+          title="Aun no existe una version activa publicada"
+          description="El sitio publico se habilita despues de cargar, validar y publicar al menos una corrida operativa de primas o estado de situación financiera."
+        />
+      ) : null}
+
       <section className="hero-panel">
         <div className="hero-panel__grid">
           <div>

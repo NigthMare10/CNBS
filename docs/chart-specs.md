@@ -1,89 +1,40 @@
-# Chart Specs
+# Especificacion de Graficos
 
-## Source of Specification
+## Regla general
 
-The chart specification was extracted from the reference workbook chart objects and related sheet formulas, especially the `Gráficos` sheet and chart XML references.
+Los graficos publicos deben ser honestos respecto a la cobertura real de `premiums` y `financialPosition`.
 
-Machine-readable version:
+- si el dato existe y es derivable, se publica
+- si falta la fuente o la relacion no es segura, se muestra `Dato no disponible`
 
-- `config/chart-specs.json`
+## Graficos del home
 
-## Extracted Reference Charts
+| Grafico | Dominio requerido | Artefacto | Estado |
+|---|---|---|---|
+| Primas por ramo a diciembre | premiums | `aggregates/premiums-by-line.json` | soportado |
+| Relacion siniestros / primas por ramo | claims + premiums historicos | no existe | omitido honestamente |
+| Participacion de mercado por compania | premiums | `aggregates/premiums-by-institution.json` | soportado |
+| Primas totales por compania | premiums | `aggregates/premiums-by-institution.json` | soportado |
+| Siniestros totales por compania | claims | no existe | omitido honestamente |
+| Top instituciones por primas | premiums | `aggregates/premiums-by-institution.json` | soportado |
+| Concentracion por ramo | premiums | `aggregates/premiums-by-line.json` | soportado |
+| Top instituciones por activos | financialPosition | `aggregates/financial-highlights.json` | soportado |
+| Reservas tecnicas por institucion | financialPosition | `aggregates/financial-highlights.json` | soportado |
+| Dona de participacion de mercado | premiums | `aggregates/premiums-by-institution.json` | soportado |
 
-### 1. Primas y Siniestros por Ramo a Diciembre
+## Rankings visibles
 
-- Reference title: `Primas y Siniestros por Ramo a Diciembre 2025`
-- Reference ranges:
-  - `'1. Ramos Totales'!$A$10:$A$20`
-  - `'1. Ramos Totales'!$C$10:$C$20`
-  - `'1. Ramos Totales'!$G$10:$G$20`
-- Expected dimension: ramo
-- Expected series: primas, siniestros
-- Runtime support: partial
-- Current runtime behavior: render premiums by ramo only, with explicit note that claims data is unavailable in current sources
+| Vista | Dominio requerido | Artefacto | Estado |
+|---|---|---|---|
+| Ranking de primas | premiums | `aggregates/rankings.json` | soportado |
+| Ranking de activos | financialPosition | `aggregates/rankings.json` | soportado si hay balance |
+| Ranking de patrimonio | financialPosition | `aggregates/rankings.json` | soportado si hay balance |
+| Ranking de reservas tecnicas | financialPosition | `aggregates/rankings.json` | soportado si hay balance |
 
-### 2. Relación de Siniestros / Primas por Ramo (2025 vs 2024)
+## Referencia del informe preliminar
 
-- Reference title: `Relación de Siniestros / Primas por Ramo 2025 vs. 2024`
-- Reference ranges:
-  - `'1. Ramos Totales'!$J$10:$J$20`
-  - `'1. Ramos Totales'!$K$10:$K$20`
-- Expected dimensions: ramo, period
-- Runtime support: unavailable
-- Missing data:
-  - authoritative claims source
-  - historical comparative raw publication for 2024
+El informe preliminar se usa como referencia conceptual de cuadros, no como fuente runtime. En particular:
 
-### 3. Participación de Mercado a Diciembre por Compañía
-
-- Reference title: `Participación de Mercado a Diciembre por Compañía`
-- Reference ranges:
-  - `'8. Primas y Siniestros Totales'!$B$10:$B$21`
-  - `'8. Primas y Siniestros Totales'!$D$10:$D$21`
-- Expected dimension: institution
-- Runtime support: fully supported
-- Runtime derivation: published premium totals by institution + market share percentage
-
-### 4. Primas y Siniestros Totales por Compañía
-
-- Reference title: `Primas y Siniestros Totales por Compañía`
-- Reference ranges:
-  - `'8. Primas y Siniestros Totales'!$D$10:$D$21`
-  - `'8. Primas y Siniestros Totales'!$H$10:$H$21`
-- Expected dimension: institution
-- Runtime support: partial
-- Current runtime behavior: render premiums totals only, with explicit note that claims series is unavailable with current sources
-
-## Additional Supported Runtime Visualizations
-
-### Top Instituciones por Activos
-
-- Domain: financial position
-- Question answered: which institutions concentrate the largest assets in the active publication?
-- Runtime support: fully supported
-
-### Reservas Técnicas por Institución
-
-- Domain: financial position
-- Question answered: which institutions hold the largest reserves in the active publication?
-- Runtime support: fully supported
-
-### Participación de Mercado (Dona)
-
-- Domain: premiums
-- Question answered: how is market share distributed among the leading institutions?
-- Runtime support: fully supported
-
-## Runtime Rule
-
-The dashboard must never invent or extrapolate unsupported series. If the current operational sources do not support a chart honestly, the UI must render a safe unavailable state and explain which source is missing.
-
-## Additional Preliminary Workbook References
-
-The preliminary workbook also exposes result-oriented sheets that now inform semantic support decisions:
-
-- `1. Utilidad` -> aligns with income statement `netIncome`
-- `2. Ingresos Financieros` -> aligns with income statement `financialIncome`
-- `7.1 Primas Retenidas` -> aligns with income statement `retainedPremiums`
-
-These are now modeled as business references for the `incomeStatement` domain, not as runtime sources.
+- `1. Ramos Totales` sirve para contrastar la intencion del grafico de primas por ramo
+- `8. Primas y Siniestros Totales` sirve para revisar cuadros por compania
+- hojas de utilidad o ingresos financieros solo sirven como referencia semantica, no como fuente publica

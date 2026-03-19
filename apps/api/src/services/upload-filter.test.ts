@@ -38,4 +38,16 @@ describe("mapMultipartUploadsToInputs", () => {
     expect(files).toHaveLength(2);
     expect(files.map((file) => file.originalFilename).sort()).toEqual(["EstadoSituacionFinanciera (2).xlsx", "Primas (3).xlsx"]);
   });
+
+  it("drops missing temporary multipart files instead of throwing", async () => {
+    const files = await mapMultipartUploadsToInputs([
+      {
+        filepath: resolve(process.cwd(), "missing-upload.xlsx"),
+        filename: "missing-upload.xlsx",
+        mimetype: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      }
+    ]);
+
+    expect(files).toHaveLength(0);
+  });
 });

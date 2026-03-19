@@ -25,7 +25,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
 
           <div className="admin-auth__meta">
             <span>Ruta inicial recomendada: `http://localhost:3001/`</span>
-            <span>Acceso local por defecto: usuario `admin`, contraseña `change-me`</span>
+            <span>Acceso local controlado por variables de entorno del entorno actual.</span>
           </div>
         </section>
 
@@ -33,6 +33,9 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <div className="admin-page">
             {params.error === "invalid_credentials" && (
               <div className="admin-alert--error">Las credenciales ingresadas no son válidas para el entorno local.</div>
+            )}
+            {params.error === "invalid_request_origin" && (
+              <div className="admin-alert--error">La solicitud fue rechazada por origen no confiable.</div>
             )}
             {authMode === "local" ? (
               <form action={signInAction} className="admin-form">

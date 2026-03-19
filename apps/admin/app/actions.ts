@@ -1,8 +1,10 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { apiConfig, env } from "@cnbs/config";
+import { apiConfig } from "@cnbs/config";
 import { clearAdminSession, createAdminSession, getAdminAuthMode, getAdminSession } from "../lib/auth";
+import { buildAdminApiHeaders } from "../lib/api";
+import { isTrustedAdminActionRequest } from "../lib/request-guard";
 import { buildUploadFormData } from "../lib/upload";
 
 function formDataString(value: FormDataEntryValue | null): string {
@@ -10,6 +12,10 @@ function formDataString(value: FormDataEntryValue | null): string {
 }
 
 export async function signInAction(formData: FormData) {
+  if (!(await isTrustedAdminActionRequest())) {
+    redirect("/?error=invalid_request_origin");
+  }
+
   if (getAdminAuthMode() === "oidc") {
     redirect("/auth/oidc/login");
   }
@@ -26,11 +32,19 @@ export async function signInAction(formData: FormData) {
 }
 
 export async function signOutAction() {
+  if (!(await isTrustedAdminActionRequest())) {
+    redirect("/");
+  }
+
   await clearAdminSession();
   redirect("/");
 }
 
 export async function uploadWorkbookSetAction(formData: FormData) {
+  if (!(await isTrustedAdminActionRequest())) {
+    redirect("/upload?error=invalid_request_origin");
+  }
+
   const session = await getAdminSession();
   if (!session) {
     redirect("/");
@@ -44,11 +58,7 @@ export async function uploadWorkbookSetAction(formData: FormData) {
 
   const response = await fetch(`${apiConfig.baseUrl}/api/admin/ingestions`, {
     method: "POST",
-    headers: {
-      "x-cnbs-admin-secret": env.CNBS_ADMIN_API_SECRET,
-      "x-cnbs-admin-user": session.user,
-      "x-cnbs-admin-role": session.role
-    },
+    headers: buildAdminApiHeaders(session),
     body: forward,
     cache: "no-store"
   });
@@ -63,6 +73,10 @@ export async function uploadWorkbookSetAction(formData: FormData) {
 }
 
 export async function publishRunAction(formData: FormData) {
+  if (!(await isTrustedAdminActionRequest())) {
+    redirect("/publish?error=invalid_request_origin");
+  }
+
   const session = await getAdminSession();
   if (!session) {
     redirect("/");
@@ -71,11 +85,7 @@ export async function publishRunAction(formData: FormData) {
   const runId = formDataString(formData.get("runId"));
   const response = await fetch(`${apiConfig.baseUrl}/api/admin/publications/${runId}/publish`, {
     method: "POST",
-    headers: {
-      "x-cnbs-admin-secret": env.CNBS_ADMIN_API_SECRET,
-      "x-cnbs-admin-user": session.user,
-      "x-cnbs-admin-role": session.role
-    },
+    headers: buildAdminApiHeaders(session),
     cache: "no-store"
   });
 
@@ -88,6 +98,10 @@ export async function publishRunAction(formData: FormData) {
 }
 
 export async function rollbackVersionAction(formData: FormData) {
+  if (!(await isTrustedAdminActionRequest())) {
+    redirect("/publications?error=invalid_request_origin");
+  }
+
   const session = await getAdminSession();
   if (!session) {
     redirect("/");
@@ -96,11 +110,7 @@ export async function rollbackVersionAction(formData: FormData) {
   const datasetVersionId = formDataString(formData.get("datasetVersionId"));
   const response = await fetch(`${apiConfig.baseUrl}/api/admin/publications/${datasetVersionId}/rollback`, {
     method: "POST",
-    headers: {
-      "x-cnbs-admin-secret": env.CNBS_ADMIN_API_SECRET,
-      "x-cnbs-admin-user": session.user,
-      "x-cnbs-admin-role": session.role
-    },
+    headers: buildAdminApiHeaders(session),
     cache: "no-store"
   });
 

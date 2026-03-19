@@ -234,11 +234,9 @@ export class IngestionService {
       status: dataset.status,
       createdAt: dataset.createdAt,
       publishedAt: dataset.publishedAt,
-      uploadedBy: dataset.uploadedBy,
       businessPeriods: dataset.businessPeriods,
       datasetScope: dataset.datasetScope,
       domainAvailability: dataset.domainAvailability,
-      fingerprint: dataset.fingerprint,
       validationSummary: {
         publishability: dataset.validationSummary.publishability,
         issuesCount: dataset.validationSummary.issues.length
@@ -741,6 +739,10 @@ export class IngestionService {
 
   async listStagedRuns() {
     return await this.storage.listStagingRuns();
+  }
+
+  async getStagedRun(ingestionRunId: string) {
+    return await this.storage.readStagingRun(ingestionRunId);
   }
 
   async listStagedRunSummaries(): Promise<StagedIngestionRunListItem[]> {

@@ -1,12 +1,15 @@
-import type { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyReply } from "fastify";
+import { securityConfig } from "@cnbs/config";
 import { requireAdmin } from "../../services/auth";
 import { getIngestionService } from "../../services/container";
 import { runtimeMetrics } from "../../services/runtime-metrics";
 import { mapMultipartUploadsToInputs } from "../../services/upload-filter";
 
 function paginationParams(query: { page?: string; pageSize?: string }) {
-  const page = Math.max(1, Number(query.page ?? 1));
-  const pageSize = Math.max(1, Math.min(100, Number(query.pageSize ?? 10)));
+  const requestedPage = Number(query.page ?? 1);
+  const requestedPageSize = Number(query.pageSize ?? 10);
+  const page = Number.isFinite(requestedPage) ? Math.max(1, requestedPage) : 1;
+  const pageSize = Number.isFinite(requestedPageSize) ? Math.max(1, Math.min(100, requestedPageSize)) : 10;
   return { page, pageSize };
 }
 
@@ -23,6 +26,32 @@ function paginate<T>(items: T[], page: number, pageSize: number) {
     total,
     totalPages
   };
+}
+
+function isFileNotFound(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code?: unknown }).code === "ENOENT";
+}
+
+async function respondOperationalError(reply: FastifyReply, requestId: string, error: unknown) {
+  if (isFileNotFound(error)) {
+    return await reply.code(404).send({
+      error: {
+        message: "Requested admin resource was not found.",
+        requestId
+      }
+    });
+  }
+
+  if (error instanceof Error && /blocked from publication/i.test(error.message)) {
+    return await reply.code(409).send({
+      error: {
+        message: error.message,
+        requestId
+      }
+    });
+  }
+
+  throw error;
 }
 
 export const adminRoutes: FastifyPluginAsync = async (fastify) => {
@@ -55,7 +84,28 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
     return paginate(runs, page, pageSize);
   });
 
-  fastify.post("/ingestions", async (request, reply) => {
+  fastify.get("/ingestions/:ingestionRunId", async (request, reply) => {
+    await requireAdmin(request, reply, "view");
+    if (reply.sent) return;
+
+    const service = await getIngestionService();
+    const params = request.params as { ingestionRunId: string };
+
+    try {
+      return await service.getStagedRun(params.ingestionRunId);
+    } catch (error) {
+      return await respondOperationalError(reply, request.id, error);
+    }
+  });
+
+  fastify.post("/ingestions", {
+    config: {
+      rateLimit: {
+        max: securityConfig.adminRateLimitMax,
+        timeWindow: "1 minute"
+      }
+    }
+  }, async (request, reply) => {
     await requireAdmin(request, reply, "upload");
     if (reply.sent) return;
 
@@ -80,24 +130,46 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.code(201).send(run);
   });
 
-  fastify.post("/publications/:ingestionRunId/publish", async (request, reply) => {
+  fastify.post("/publications/:ingestionRunId/publish", {
+    config: {
+      rateLimit: {
+        max: securityConfig.adminRateLimitMax,
+        timeWindow: "1 minute"
+      }
+    }
+  }, async (request, reply) => {
     await requireAdmin(request, reply, "publish");
     if (reply.sent) return;
 
     const params = request.params as { ingestionRunId: string };
     const service = await getIngestionService();
-    const version = await service.publishStagedRun(params.ingestionRunId, request.adminContext?.user ?? "unknown");
-    return { published: version };
+    try {
+      const version = await service.publishStagedRun(params.ingestionRunId, request.adminContext?.user ?? "unknown");
+      return { published: version };
+    } catch (error) {
+      return await respondOperationalError(reply, request.id, error);
+    }
   });
 
-  fastify.post("/publications/:datasetVersionId/rollback", async (request, reply) => {
+  fastify.post("/publications/:datasetVersionId/rollback", {
+    config: {
+      rateLimit: {
+        max: securityConfig.adminRateLimitMax,
+        timeWindow: "1 minute"
+      }
+    }
+  }, async (request, reply) => {
     await requireAdmin(request, reply, "rollback");
     if (reply.sent) return;
 
     const params = request.params as { datasetVersionId: string };
     const service = await getIngestionService();
-    const version = await service.rollbackToVersion(params.datasetVersionId, request.adminContext?.user ?? "unknown");
-    return { rolledBackTo: version };
+    try {
+      const version = await service.rollbackToVersion(params.datasetVersionId, request.adminContext?.user ?? "unknown");
+      return { rolledBackTo: version };
+    } catch (error) {
+      return await respondOperationalError(reply, request.id, error);
+    }
   });
 
   fastify.get("/publications", async (request, reply) => {

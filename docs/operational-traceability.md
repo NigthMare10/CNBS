@@ -1,61 +1,82 @@
-# Operational Traceability
+# Trazabilidad Operativa
 
-## Time Handling
+## Identidad de cada corrida
 
-- timestamps are stored internally in UTC ISO strings
-- UI surfaces render timestamps using the configured display timezone
-- current default timezone: `America/Tegucigalpa`
+Toda corrida en staging tiene:
 
-Impacted fields:
-
+- `ingestionRunId`
 - `createdAt`
-- `publishedAt`
-- audit `timestamp`
-- active dataset pointer `updatedAt`
+- `uploadedBy`
+- `publicationState`
+- `sourceFiles`
+- `mappingSummary`
+- `validationSummary`
+- `reconciliationSummary`
 
-## Run to Dataset Traceability
+## Identidad de cada version publicada
 
-Every dataset version now carries:
+Toda version publicada tiene:
 
 - `datasetVersionId`
 - `ingestionRunId`
-- `uploadedBy`
+- `createdAt`
 - `publishedAt`
 - `datasetScope`
 - `domainAvailability`
+- `validationSummary`
+- `reconciliationSummary`
 
-Every staged run now carries:
+## Cadena de trazabilidad
 
-- `ingestionRunId`
-- `publicationState`
-- `publishedDatasetVersionId`
-- `publishedAt`
+La cadena operativa completa es:
 
-This allows the admin UI to answer:
+`upload -> staging -> validate -> reconcile -> publish -> active version -> rollback`
 
-- which run produced which dataset version
-- whether a run has already been published
-- whether that publication is the active dataset
-- when a publication happened in local display time
+Esto permite responder:
 
-## Admin Views
+- que corrida genero cada version
+- que version esta activa
+- cuando se publico
+- que archivos alimentaron la corrida
+- que coverage produjo la publicacion
+
+## Superficies administrativas
+
+### Upload
+
+- muestra la ultima corrida detectada
+- conserva evidencia de clasificacion por firma
 
 ### Ingestions
 
-- shows publication state
-- shows dataset version when already published
-- highlights when the run produced the active version
+- lista corridas en staging
+- muestra estado de publicacion
+- marca cuando una corrida genero la version activa
+
+### Reconciliation
+
+- muestra la corrida solicitada o la mas reciente
+- resume reparaciones de texto, aliases resueltos, ambiguos y no resueltos
+- conserva el JSON tecnico completo de la corrida
 
 ### Publish
 
-- disables effective publish action by replacing it with informational state when the run was already published
-- shows when and as which dataset it was published
+- distingue corridas ya publicadas
+- bloquea visualmente corridas no publicables
+- muestra cuando una corrida ya corresponde a la version activa
 
 ### Publications / History
 
-- show dataset version id, ingestion run id, publication time, status and operational label
+- muestran versiones publicadas
+- permiten rollback controlado
 
 ### Audit
 
-- shows action, actor, ingestion run id, dataset version id and formatted timestamp
-- highlights events linked to the active version
+- muestra actor, accion, corrida, dataset y timestamp
+- conserva resumen de calidad de texto en eventos relevantes
+
+## Timezone
+
+- los timestamps se almacenan en UTC ISO
+- la UI administrativa se renderiza en `America/Tegucigalpa`
+- la zona horaria debe mostrarse de forma explicita en superficies operativas

@@ -1,5 +1,6 @@
 import { resolve } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { createSignedToken } from "@cnbs/domain";
 import { LocalStorageRepository } from "@cnbs/etl";
 import { IngestionService } from "@cnbs/etl";
 import { buildApp } from "./app";
@@ -92,8 +93,15 @@ describe("API integration", () => {
       url: "/api/admin/system/status",
       headers: {
         "x-cnbs-admin-secret": "local-dev-secret",
-        "x-cnbs-admin-role": "admin",
-        "x-cnbs-admin-user": "tester"
+        "x-cnbs-admin-auth": createSignedToken(
+          {
+            user: "tester",
+            role: "admin",
+            iat: Math.floor(Date.now() / 1000),
+            exp: Math.floor(Date.now() / 1000) + 300
+          },
+          "local-dev-secret:service"
+        )
       }
     });
     const payload: {
@@ -104,6 +112,77 @@ describe("API integration", () => {
     expect(response.statusCode).toBe(200);
     expect(payload.latestTextQuality?.mappingSummary?.unresolvedAliases).toBe(0);
     expect(payload.activeTextQuality?.mappingSummary?.unresolvedAliases).toBe(0);
+    await app.close();
+  }, 20000);
+
+  it("rejects admin requests without a valid signed identity token", async () => {
+    const app = buildApp();
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/admin/system/status",
+      headers: {
+        "x-cnbs-admin-secret": "local-dev-secret"
+      }
+    });
+
+    expect(response.statusCode).toBe(401);
+    await app.close();
+  }, 20000);
+
+  it("returns 404 for missing staged runs instead of 500", async () => {
+    const app = buildApp();
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/admin/ingestions/run-missing",
+      headers: {
+        "x-cnbs-admin-secret": "local-dev-secret",
+        "x-cnbs-admin-auth": createSignedToken(
+          {
+            user: "tester",
+            role: "admin",
+            iat: Math.floor(Date.now() / 1000),
+            exp: Math.floor(Date.now() / 1000) + 300
+          },
+          "local-dev-secret:service"
+        )
+      }
+    });
+
+    expect(response.statusCode).toBe(404);
+    await app.close();
+  }, 20000);
+
+  it("degrades safely when the active pointer references a missing published version", async () => {
+    await storage.activateDataset("dataset-missing");
+    const app = buildApp();
+
+    const [overviewResponse, statusResponse] = await Promise.all([
+      app.inject({ method: "GET", url: "/api/public/overview" }),
+      app.inject({
+        method: "GET",
+        url: "/api/admin/system/status",
+        headers: {
+          "x-cnbs-admin-secret": "local-dev-secret",
+          "x-cnbs-admin-auth": createSignedToken(
+            {
+              user: "tester",
+              role: "admin",
+              iat: Math.floor(Date.now() / 1000),
+              exp: Math.floor(Date.now() / 1000) + 300
+            },
+            "local-dev-secret:service"
+          )
+        }
+      })
+    ]);
+
+    const overviewPayload: { metadata: unknown } = overviewResponse.json();
+    const statusPayload: { activeDataset: unknown } = statusResponse.json();
+
+    expect(overviewResponse.statusCode).toBe(200);
+    expect(overviewPayload.metadata).toBeNull();
+    expect(statusResponse.statusCode).toBe(200);
+    expect(statusPayload.activeDataset).toBeNull();
     await app.close();
   }, 20000);
 });

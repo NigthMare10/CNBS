@@ -71,6 +71,7 @@ Admin entry URL:
 |---|---|---|---|
 | `GET` | `/api/admin/system/status` | `apps/api/src/routes/admin/index.ts` | Active dataset + counters + latest text-quality telemetry |
 | `GET` | `/api/admin/ingestions` | `apps/api/src/routes/admin/index.ts` | List staged runs |
+| `GET` | `/api/admin/ingestions/:ingestionRunId` | `apps/api/src/routes/admin/index.ts` | Read a staged run with full detail |
 | `POST` | `/api/admin/ingestions` | `apps/api/src/routes/admin/index.ts` | Upload workbook set and create staging run |
 | `POST` | `/api/admin/publications/:ingestionRunId/publish` | `apps/api/src/routes/admin/index.ts` | Publish staged run |
 | `POST` | `/api/admin/publications/:datasetVersionId/rollback` | `apps/api/src/routes/admin/index.ts` | Roll back active dataset |
@@ -135,6 +136,8 @@ Important:
 - at least one primary workbook must be present
 - reference workbook alone is not enough to publish
 - workbook names may change; classification is based on structure and semantic content
+- only `premiums` and `financialPosition` feed the public operational runtime
+- the preliminary workbook remains optional and non-authoritative
 
 ### Step 3: Review Staging
 
@@ -165,6 +168,8 @@ Important:
   - `http://localhost:4000/api/public/version`
 - Result: both show the same active `datasetVersionId`
 - the UI should show localized date/time for publication timestamps
+
+If no dataset has been published yet, the public site should degrade safely and explain that no active version exists.
 
 ### Step 7: Verify Public Dashboard Change
 

@@ -16,6 +16,7 @@ export default async function RankingsPage() {
     publicApi.rankings() as Promise<Record<string, Array<Record<string, unknown>>>>,
     publicApi.version() as Promise<{ activeDataset?: Record<string, unknown> }>
   ]);
+  const activeDataset = versionPayload.activeDataset;
   const domainAvailability = (versionPayload.activeDataset?.domainAvailability as Record<string, Record<string, unknown>> | undefined) ?? {};
   const financialAvailable = domainAvailability.financialPosition?.publishable === true;
   const rankingGroups = [
@@ -32,6 +33,12 @@ export default async function RankingsPage() {
         title="Comparativos institucionales"
         description="Cuadros derivados de datos oficiales habilitados en fase 1."
       />
+      {!activeDataset ? (
+        <EmptyState
+          title="No existe una version activa publicada"
+          description="Los rankings se habilitan cuando una corrida operativa de primas o balance pasa a publicacion."
+        />
+      ) : null}
       <div className="page-grid-3">
         {rankingGroups.map((group) => {
           const items = (rankings[group.key] ?? []).slice(0, 12);

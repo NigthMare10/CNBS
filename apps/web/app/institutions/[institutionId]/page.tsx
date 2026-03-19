@@ -1,4 +1,5 @@
 import { Card, EmptyState, KeyValueList, SectionHeading } from "@cnbs/ui";
+import { notFound } from "next/navigation";
 import { publicApi } from "../../../lib/api";
 
 export const dynamic = "force-dynamic";
@@ -14,6 +15,9 @@ function stringValue(value: unknown, fallback = ""): string {
 export default async function InstitutionPage({ params }: { params: Promise<{ institutionId: string }> }) {
   const { institutionId } = await params;
   const payload = await publicApi.institution(institutionId);
+  if (!payload) {
+    notFound();
+  }
 
   const institution = payload.institution as Record<string, unknown>;
   const premiumSummary = payload.premiumSummary as Record<string, unknown> | undefined;

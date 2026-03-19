@@ -2,8 +2,8 @@ import type { FastifyPluginAsync } from "fastify";
 import { getIngestionService } from "../../services/container";
 
 function pagination<T>(items: T[], page = 1, pageSize = 25) {
-  const safePage = Math.max(page, 1);
-  const safePageSize = Math.max(1, Math.min(pageSize, 200));
+  const safePage = Number.isFinite(page) ? Math.max(page, 1) : 1;
+  const safePageSize = Number.isFinite(pageSize) ? Math.max(1, Math.min(pageSize, 200)) : 25;
   const start = (safePage - 1) * safePageSize;
   const data = items.slice(start, start + safePageSize);
 
@@ -23,7 +23,7 @@ export const publicRoutes: FastifyPluginAsync = async (fastify) => {
   await Promise.resolve();
 
   fastify.addHook("onSend", (_request, reply, payload, done) => {
-    reply.header("Cache-Control", "public, max-age=60, stale-while-revalidate=300");
+    reply.header("Cache-Control", "public, max-age=15, stale-while-revalidate=60");
     done(null, payload);
   });
 

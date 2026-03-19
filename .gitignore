@@ -3,6 +3,7 @@ node_modules/
 .next/
 dist/
 coverage/
+*.tsbuildinfo
 .env
 .env.local
 *.log
@@ -12,3 +13,5 @@ storage/staging/*
 storage/audit/*
 !storage/active/
 !storage/active/active-dataset.json
+storage/active/cache-state.json
+packages/etl/storage/

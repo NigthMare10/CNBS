@@ -1,64 +1,54 @@
-# Testing Strategy
+# Estrategia de Testing
 
-## Layers
+## Objetivo
 
-- unit tests
-- integration tests
-- end-to-end tests
-- regression tests with workbook fixtures
+La suite debe proteger la primera version operativa basada en dos fuentes primarias:
 
-## Fixture Policy
+- `premiums`
+- `financialPosition`
 
-- preserve the three current workbooks under `packages/testing/fixtures/workbooks/`
-- add synthetic broken fixtures for edge cases
+## Capas de prueba
 
-## Unit Tests
+### Unitarias
 
-- signature detection
-- normalization dictionaries
-- text repair
-- canonical mapping
-- future regressions for mojibake, accentless variants, slash variants, double spaces, and unusual casing
-- ambiguous matching guardrails so broad candidates remain blocked instead of accepted silently
-- aggregation formulas
-- version pointer switching
+- deteccion de firmas de workbook
+- normalizacion y reparacion de texto
+- alias y guardrails de ambiguedad
+- tokens firmados y validacion de integridad
+- formulas de agregacion y rankings
 
-## Integration Tests
+### Integracion
 
 - upload -> parse -> validate -> normalize -> publish
-- failed validation does not switch active version
-- rollback switches active version back
-- premiums-only upload publishes partial dataset metadata correctly
-- financial-only upload publishes partial dataset metadata correctly
-- income-statement-only upload publishes metadata correctly when semantically recognizable
-- combined upload with optional reference publishes correctly
-- arbitrary workbook filenames do not affect correct classification
-- premiums + detected incomeStatement still publish only operational domains without fake balance values
-- incomeStatement-only upload is blocked as non-operational under the current two-source policy
-- balance-derived reserves KPI and reserves ranking are published when financial position is present
-- localized timestamp formatting remains stable and explicit in admin/public views
-- staging run to dataset version traceability is visible in admin views
+- datasets parciales honestos
+- `premiums + financialPosition`
+- active version
+- rollback
+- degradacion segura cuando falta la version activa o un artefacto opcional
+- respuestas admin/public sin 500 evitables
 
-## E2E Tests
+### Regresion
 
-- admin uploads valid workbook set
-- admin sees reconciliation report
-- publish updates public site version metadata
-- rollback restores previous version
+- filenames arbitrarios
+- mojibake frecuente
+- variantes sin tildes
+- slash y espacios dobles
+- mayusculas/minusculas irregulares
+- alias ambiguos bloqueados
+- `incomeStatement` detectable pero no operativo
+- oraculo preliminar no convertido en fuente runtime
 
-## Negative Cases
+## Casos minimos obligatorios
 
-- missing columns
-- duplicate workbook roles
-- corrupt zip
-- encoded text issues
-- inconsistent names
-- ambiguous alias candidates
-- mismatched periods
-- reconciliation critical failure
-- reference-only upload blocked
-- type not allowed blocked
-- charts without claims source rendered as unavailable
-- unknown-but-safe workbook blocked as unclassified, not silently misclassified
-- institution alias variants resolve to canonical institutions
-- result-domain uploads never cause the public UI to fake supported balance or premium widgets
+- upload multiple valido
+- upload corrupto o vacio
+- workbook no clasificado
+- referencia sola bloqueada
+- publish de corrida bloqueada responde de forma controlada
+- `system/status` funciona con y sin version activa valida
+- home, rankings, version e institucion responden con estados honestos
+
+## Regla de calidad
+
+- toda correccion de estabilidad o seguridad debe venir con test si el punto es deterministico
+- las limitaciones deliberadas tambien deben quedar probadas para evitar regresiones engañosas

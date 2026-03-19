@@ -27,19 +27,23 @@ export async function mapMultipartUploadsToInputs(
 ): Promise<UploadedWorkbookInput[]> {
   const mapped = await Promise.all(
     files.map(async (file) => {
-      const fileStat = await stat(file.filepath);
-      const sizeBytes = fileStat.size > 0 ? fileStat.size : Number(file.file?.bytesRead ?? 0);
+      try {
+        const fileStat = await stat(file.filepath);
+        const sizeBytes = fileStat.size > 0 ? fileStat.size : Number(file.file?.bytesRead ?? 0);
 
-      if (!isMeaningfulUpload(file, sizeBytes)) {
+        if (!isMeaningfulUpload(file, sizeBytes)) {
+          return null;
+        }
+
+        return {
+          filePath: file.filepath,
+          originalFilename: file.filename,
+          mimeType: file.mimetype,
+          sizeBytes
+        } satisfies UploadedWorkbookInput;
+      } catch {
         return null;
       }
-
-      return {
-        filePath: file.filepath,
-        originalFilename: file.filename,
-        mimeType: file.mimetype,
-        sizeBytes
-      } satisfies UploadedWorkbookInput;
     })
   );
 

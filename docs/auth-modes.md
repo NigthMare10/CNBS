@@ -1,53 +1,43 @@
-# Auth Modes
+# Modos de Autenticacion
 
-## Supported Modes
-
-The admin app supports two authentication modes:
+## Modos soportados
 
 - `local`
 - `oidc`
 
-## Local Mode
+## `local`
 
-Default mode for development.
+Uso previsto:
 
-Environment:
+- desarrollo local
+- pruebas operativas controladas
 
-- `CNBS_AUTH_MODE=local`
-- `CNBS_ADMIN_USER`
-- `CNBS_ADMIN_PASSWORD`
-- `CNBS_ADMIN_ROLE`
+Comportamiento:
 
-Behavior:
+- login por usuario y password configurados
+- la sesion se guarda en cookie firmada
+- las llamadas del admin al API usan token firmado de servicio mas secreto administrativo
 
-- login form is shown at `/`
-- session is stored in the `cnbs-admin-session` cookie
-- suitable for local development and isolated testing
+## `oidc`
 
-## OIDC Mode
+Uso previsto:
 
-Enabled only when all required variables are present.
+- revision institucional o despliegue con SSO corporativo
 
-Required variables:
+Requiere:
 
 - `CNBS_AUTH_MODE=oidc`
-- `CNBS_OIDC_ISSUER_URL`
-- `CNBS_OIDC_CLIENT_ID`
-- `CNBS_OIDC_CLIENT_SECRET`
-- `CNBS_OIDC_REDIRECT_URI`
+- issuer URL
+- client id
+- client secret
+- redirect URI
 
-Optional:
+Comportamiento:
 
-- `CNBS_OIDC_SCOPES`
-- `CNBS_OIDC_POST_LOGOUT_REDIRECT_URI`
+- el login se hace via `/auth/oidc/login`
+- el callback valida `state`, `nonce` y PKCE
+- al completar, se crea la misma cookie firmada de sesion interna
 
-Behavior:
+## Limitacion actual
 
-- login screen shows SSO entry action
-- admin redirects through `/auth/oidc/login`
-- callback handled by `/auth/oidc/callback`
-- resulting admin session uses the same internal cookie abstraction as local mode
-
-## Fallback Rule
-
-If OIDC mode is requested but the required variables are incomplete, the system falls back safely to local mode behavior.
+En esta primera version, OIDC autentica identidad pero no implementa aun mapeo fino de grupos o claims a roles institucionales. El rol operativo sigue definido por configuracion del entorno.

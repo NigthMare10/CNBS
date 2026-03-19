@@ -1,82 +1,51 @@
-# Security Strategy
+# Estrategia de Seguridad
 
-## Threat Model
+## Amenazas principales
 
-Primary threats:
+- uploads maliciosos o corruptos
+- macro / encrypted workbook
+- zip bombs
+- placeholders `blob` o multipart fantasma
+- path traversal en nombres de archivo
+- escalamiento de privilegios en admin
+- CSRF en mutaciones administrativas
+- exposicion innecesaria de metadata operativa
 
-- malicious workbook uploads
-- macro/VBA execution attempts
-- formula injection in exported or rendered values
-- XSS via workbook strings
-- CSRF on admin actions
-- SSRF or path traversal in upload handling
-- zip bombs and decompression abuse
-- privilege escalation in admin
+## Controles implementados
 
-## Controls
+### Upload y workbook hardening
 
-### Upload Security
+- solo `.xlsx`
+- validacion de extension, MIME y magic bytes
+- limite de tamano
+- deteccion de macro y encrypted package
+- chequeo de workbook protegido
+- filtro de uploads `blob` y zero-byte
+- nombres originales sanitizados antes de persistir
 
-- only `.xlsx` allowed in phase 1
-- extension, MIME, and magic-byte verification
-- size limits
-- compression ratio checks
-- encrypted/protected workbook rejection
-- macro-enabled content rejection
-- sanitized original filename persistence
-- optional reference workbook allowed, but not required
-- safe separation between security rejection and functional classification rejection
+### Admin auth y autorizacion
 
-### Parsing Security
+- cookie administrativa firmada y con expiracion
+- token firmado server-to-server para llamadas admin hacia el API
+- el API ya no confia en `user` o `role` enviados en claro
+- RBAC operativo por rol: `admin`, `uploader`, `validator`, `publisher`, `auditor`
 
-- parse OOXML data only
-- never execute VBA or formulas
-- use cached formula values only for the reference workbook
+### Mutaciones y protecciones HTTP
 
-### Input Security
+- verificacion de origen confiable en server actions administrativas
+- `helmet` en API
+- `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` y `Permissions-Policy` en `web` y `admin`
+- rate limiting reforzado en uploads, publish y rollback
 
-- trim, normalize, and sanitize all strings
-- HTML escaping by default in UI
-- no untrusted HTML rendering
-- formula-like cell values prefixed on export when needed
+## Limitaciones conocidas para piloto
 
-### Authentication and Authorization
+- el cookie signing usa el secreto administrativo del entorno; para produccion real conviene separar secreto de sesion y secreto de integracion
+- no hay politica completa de allowlist de claims/grupos para OIDC; hoy el rol operativo sigue viniendo de configuracion
+- CORS del API sigue abierto para facilitar integracion local; para produccion debe cerrarse por origen
+- el analisis anti zip bomb sigue ocurriendo despues de copiar el archivo a cuarentena; para produccion real conviene aislar parseo y limpieza temprana
 
-- private admin app only
-- session-based auth in local dev
-- configurable `local` or `oidc` admin auth mode
-- RBAC roles: `admin`, `uploader`, `validator`, `publisher`, `auditor`
-- least privilege for publish and rollback actions
+## Regla operativa de seguridad de datos
 
-### HTTP Security
-
-- CSP
-- HSTS in secure environments
-- `X-Content-Type-Options: nosniff`
-- `Referrer-Policy: strict-origin-when-cross-origin`
-- `X-Frame-Options: DENY`
-
-### Abuse Protection
-
-- rate limiting on upload endpoints
-- smaller limits on auth endpoints
-- request body size caps
-- structured audit logging
-
-## Partial Publication Security Notes
-
-- missing one primary source is handled as controlled warning, not as unsafe implicit default
-- runtime never fabricates unsupported claims or income statement values
-- reference workbook is treated as optional non-authoritative input and cannot force publication of unsupported business facts
-
-## Classification Safety Notes
-
-- filenames are not trusted for business interpretation
-- unknown or low-confidence workbooks are rejected as unclassified, not misclassified
-- safe multipart filtering removes empty placeholders and `blob` phantom uploads before ingestion
-
-## Error Handling Policy
-
-- safe user-facing error messages
-- technical diagnostics only in internal logs
-- correlation id on every request and ingestion run
+- el informe preliminar no puede forzar publicacion publica
+- `incomeStatement` no puede contaminar la politica operativa de dos fuentes primarias
+- si falta un artefacto opcional, el sistema debe degradar seguro; si falta un artefacto critico, debe bloquear o responder con estado controlado

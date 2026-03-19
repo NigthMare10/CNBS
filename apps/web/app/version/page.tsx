@@ -46,9 +46,9 @@ export default async function VersionPage() {
             <KeyValueList
               columns={1}
               items={[
-                { key: "publisher", label: "Publicado por", value: stringValue(activeDataset.uploadedBy, "n/d") },
                 { key: "published-at", label: "Fecha de publicación", value: formatPublicDateTime(stringValue(activeDataset.publishedAt, "")) },
-                { key: "fingerprint", label: "Fingerprint", value: stringValue(activeDataset.fingerprint, "n/d") }
+                { key: "scope", label: "Cobertura operativa", value: stringValue(activeDataset.datasetScope, "n/d") },
+                { key: "sources", label: "Fuentes operativas", value: "Primas + estado de situación financiera según disponibilidad" }
               ]}
             />
           </div>

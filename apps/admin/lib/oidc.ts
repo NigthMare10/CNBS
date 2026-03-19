@@ -93,10 +93,14 @@ export async function completeOidcLogin(currentUrl: string): Promise<void> {
     (typeof claims.preferred_username === "string" && claims.preferred_username) ||
     (typeof claims.email === "string" && claims.email) ||
     claims.sub;
+  const role = env.CNBS_ADMIN_ROLE;
+  if (role !== "admin" && role !== "uploader" && role !== "validator" && role !== "publisher" && role !== "auditor") {
+    throw new Error("OIDC admin role is invalid.");
+  }
 
   await setAdminSession({
     user,
-    role: env.CNBS_ADMIN_ROLE,
+    role,
     provider: "oidc"
   });
 

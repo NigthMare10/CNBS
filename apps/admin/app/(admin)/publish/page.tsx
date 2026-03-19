@@ -21,6 +21,27 @@ export default async function PublishPage({ searchParams }: { searchParams: Prom
   const activeDataset = systemStatus.activeDataset as Record<string, unknown> | undefined;
   const activeVersionId = typeof activeDataset?.datasetVersionId === "string" ? activeDataset.datasetVersionId : null;
 
+  function publishabilityOf(value: unknown, fallback: string): string {
+    if (typeof value === "object" && value !== null && "publishability" in value) {
+      const publishability = (value as { publishability?: unknown }).publishability;
+      return typeof publishability === "string" ? publishability : fallback;
+    }
+
+    return fallback;
+  }
+
+  function mergedPublishability(run: Record<string, unknown>): string {
+    const validation = publishabilityOf(run.validationSummary, "blocked");
+    const reconciliation = publishabilityOf(run.reconciliationSummary, "warningOnly");
+    if (validation === "blocked" || reconciliation === "blocked") {
+      return "blocked";
+    }
+    if (validation === "warningOnly" || reconciliation === "warningOnly") {
+      return "warningOnly";
+    }
+    return "publishable";
+  }
+
   return (
     <div className="admin-page">
       <SectionHeading
@@ -34,7 +55,9 @@ export default async function PublishPage({ searchParams }: { searchParams: Prom
       {runs.length > 0 ? (
         <>
           <div className="admin-list">
-          {runs.map((run: Record<string, unknown>) => (
+          {runs.map((run: Record<string, unknown>) => {
+            const runPublishability = mergedPublishability(run);
+            return (
             <Card key={String(run.ingestionRunId)} title={String(run.ingestionRunId)} subtitle={formatAdminDateTime(typeof run.createdAt === "string" ? run.createdAt : "") }>
               <div className="admin-page">
                 <div className="admin-meta-item">
@@ -50,12 +73,21 @@ export default async function PublishPage({ searchParams }: { searchParams: Prom
                 <div className="admin-help">
                   Publica esta corrida para generar una versión inmutable en `storage/published/` y actualizar la versión activa del sistema.
                 </div>
+                {runPublishability === "blocked" ? (
+                  <div className="admin-alert--error">
+                    Esta corrida está bloqueada y no puede publicarse hasta resolver los issues críticos o altos detectados en validación o reconciliación.
+                  </div>
+                ) : null}
                 {typeof run.publishedDatasetVersionId === "string" && run.publishedDatasetVersionId.length > 0 ? (
                   <div className={activeVersionId === run.publishedDatasetVersionId ? "admin-alert--success" : "admin-alert"}>
                     {activeVersionId === run.publishedDatasetVersionId
                       ? `Esta corrida ya fue publicada y corresponde a la versión activa (${run.publishedDatasetVersionId}).`
                       : `Esta corrida ya fue publicada como ${run.publishedDatasetVersionId} el ${formatAdminDateTime(typeof run.publishedAt === "string" ? run.publishedAt : "")}.`}
                   </div>
+                ) : runPublishability === "blocked" ? (
+                  <button className="admin-button-secondary" disabled type="button">
+                    Publicación bloqueada
+                  </button>
                 ) : (
                   <form action={publishRunAction}>
                     <input type="hidden" name="runId" value={String(run.ingestionRunId)} />
@@ -66,7 +98,7 @@ export default async function PublishPage({ searchParams }: { searchParams: Prom
                 )}
               </div>
             </Card>
-          ))}
+          )})}
           </div>
           <AdminPagination basePath="/publish" page={response.page} totalPages={response.totalPages} />
         </>

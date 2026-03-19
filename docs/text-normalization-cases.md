@@ -32,3 +32,4 @@ Living catalog of conflictive text variants that the CNBS publication pipeline a
 - `repairedByNormalization` counts attempts where text had to be normalized before a safe outcome was possible
 - `textsRequiringMojibakeRepair` counts the subset that needed mojibake repair specifically
 - `fallbackByLineNumber` remains visible as a separate outcome; it does not silently masquerade as a direct alias match
+- evidence now remains visible in staging metadata, published metadata, audit events, `/reconciliation`, and `/api/admin/system/status`

@@ -1,90 +1,57 @@
-# Formula Reference
+# Referencia de Formulas
 
-## Role of the Preliminary Workbook
+## Alcance
 
-`INFORME_FINANCIERO_PRELIMINAR_CAHDA_DICIEMBRE-2025 VF.xlsx` is treated as a business oracle for formulas, charts, and presentation logic.
+Las formulas publicas oficiales de esta primera version salen exclusivamente de los artefactos publicados derivados de:
 
-It is not an operational runtime source.
+- `premiums`
+- `financialPosition`
 
-## Confirmed Source Relationships
+El informe preliminar solo actua como oraculo para revisar relaciones y cuadros esperados.
 
-### Derived from Premiums
+## Formulas implementadas
 
-- premiums by ramo
-- premiums by institution
-- market share
-- premium rankings
+| Metrica | Dominio requerido | Formula | Artefacto publicado |
+|---|---|---|---|
+| Primas totales | premiums | `sum(amount)` | `aggregates/executive-kpis.json` |
+| Primas por institucion | premiums | `sum(amount) group by institutionId` | `aggregates/premiums-by-institution.json` |
+| Primas por ramo | premiums | `sum(amount) group by ramoId` | `aggregates/premiums-by-line.json` |
+| Participacion de mercado | premiums | `premiumAmount / totalPremiums` | `aggregates/premiums-by-institution.json` |
+| Activos totales del sistema | financialPosition | `sum(amountCombined where accountId = total-activos)` | `aggregates/executive-kpis.json` |
+| Reservas tecnicas del sistema | financialPosition | `sum(amountCombined where accountId = reservas-tecnicas)` | `aggregates/executive-kpis.json` |
+| Activos por institucion | financialPosition | `sum(amountCombined where accountId = total-activos) group by institutionId` | `aggregates/financial-highlights.json` |
+| Patrimonio por institucion | financialPosition | `sum(amountCombined where accountId = patrimonio) group by institutionId` | `aggregates/financial-highlights.json` |
+| Reservas tecnicas por institucion | financialPosition | `sum(amountCombined where accountId = reservas-tecnicas) group by institutionId` | `aggregates/financial-highlights.json` |
 
-### Derived from Financial Position
+## Rankings soportados
 
-- total assets
-- equity
-- reserves
-- balance-based institutional highlights
+| Ranking | Dominio requerido | Artefacto |
+|---|---|---|
+| Primas | premiums | `aggregates/rankings.json` |
+| Activos | financialPosition | `aggregates/rankings.json` |
+| Patrimonio | financialPosition | `aggregates/rankings.json` |
+| Reservas tecnicas | financialPosition | `aggregates/rankings.json` |
 
-### Derived from Combined Domains
+## Bloques institucionales soportados
 
-- institutional profile with premiums + balance
+| Bloque | Dominio requerido | Artefacto |
+|---|---|---|
+| Resumen de primas | premiums | `aggregates/institutions/<institutionId>.json` |
+| Preview top de ramos | premiums | `aggregates/institutions/<institutionId>.json` |
+| Resumen financiero | financialPosition | `aggregates/institutions/<institutionId>.json` |
+| Conteo de filas financieras | financialPosition | `aggregates/institutions/<institutionId>.json` |
 
-## Detected but Non-Operational Domain
+## No soportado con integridad en esta version
 
-`incomeStatement` can still be classified for validation and traceability, but it is not part of the current operational publication policy.
+| Serie o formula | Motivo de omision |
+|---|---|
+| Siniestros / claims | no existe feed raw autoritativo en el runtime actual |
+| Relacion siniestros / primas | depende de claims no operativos |
+| Comparativos historicos homogeneos | no hay publicacion raw equivalente para todos los dominios visibles |
+| KPIs de income statement | `incomeStatement` no es fuente operativa publica |
 
-Therefore, formulas that depend on explicit result-domain raw inputs are documented but not published as official public runtime metrics.
+## Regla de implementacion
 
-## Implemented Public Formulas from the Two Operational Sources
-
-### From Premiums
-
-- `total-premiums = sum(Saldo)`
-- `premiums-by-institution = sum(Saldo) group by institution`
-- `premiums-by-line = sum(Saldo) group by ramo`
-- `market-share = premiums-by-institution / total-premiums`
-
-### From Financial Position
-
-- `total-assets = sum(amountCombined where accountId = total-activos)`
-- `equity = sum(amountCombined where accountId = patrimonio)`
-- `technical-reserves = sum(amountCombined where accountId = reservas-tecnicas)`
-
-### Public Visualizations Backed by Those Formulas
-
-- market share donut by institution
-- top premiums by institution
-- premiums by ramo
-- top assets by institution
-- technical reserves by institution
-- rankings for premiums, assets, equity, and reserves
-
-## Useful Runtime Visualizations Added
-
-- market share donut by institution from premiums
-- top net income by institution from income statement
-- domain coverage panel for the active dataset
-- institution blocks separated into premiums, balance, and results
-
-## Preliminary Workbook Relationships Observed
-
-### Chart/Sheet Families
-
-- `1. Ramos Totales` -> premiums and claims by ramo
-- `8. Primas y Siniestros Totales` -> company participation and totals
-- `1. Utilidad` -> result-oriented comparison reference only
-- `2. Ingresos Financieros` -> result-domain reference only
-- `5. Activos Totales` -> balance relationship
-- `6. Patrimonio` -> balance relationship
-- `7.1 Primas Retenidas` -> income statement relationship
-
-## Supported Today
-
-- premiums-based charts from premiums source
-- market-share chart from premiums source
-- balance highlights from financial position source
-- reserves-based highlights and rankings from financial position source
-
-## Not Yet Fully Reproducible with Integrity
-
-- claims series and claim ratios without authoritative claims feed
-- income statement runtime publication under the current two-source policy
-- interannual 2025 vs 2024 metrics without historical raw publication in the same operational model
-- formulas that need explicit cross-domain claims data
+- ninguna formula visible debe leer Excel en request-time
+- toda cifra publica debe salir de artefactos publicados y versionados
+- cuando una formula no es soportada, la UI debe explicarlo y no simular el dato
