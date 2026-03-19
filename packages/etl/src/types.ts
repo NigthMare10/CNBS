@@ -4,6 +4,7 @@ import type {
   IncomeStatementFact,
   Institution,
   InsuranceLine,
+  MappingSummary,
   PremiumFact,
   ReconciliationSummary,
   SourceFileRecord,
@@ -85,14 +86,49 @@ export interface StagedIngestionRun {
   publishedDatasetVersionId: string | null;
   publishedAt: string | null;
   sourceFiles: SourceFileRecord[];
-  mappingSummary: {
-    repairedByNormalization: number;
-    aliasesMatched: number;
-    lineNumberFallback: number;
-    unresolved: number;
-  };
+  mappingSummary: MappingSummary;
   validationSummary: ValidationSummary;
   reconciliationSummary: ReconciliationSummary;
   draftDatasetVersion: DatasetVersionRecord;
   artifacts: CanonicalDatasetArtifacts;
+}
+
+export interface StagedIngestionRunListItem {
+  ingestionRunId: string;
+  createdAt: string;
+  uploadedBy: string;
+  publicationState: StagedIngestionRun["publicationState"];
+  publishedDatasetVersionId: string | null;
+  publishedAt: string | null;
+  sourceFiles: SourceFileRecord[];
+  mappingSummary: MappingSummary;
+  validationSummary: ValidationSummary;
+  reconciliationSummary: ReconciliationSummary;
+  draftDatasetVersion: DatasetVersionRecord;
+}
+
+export interface DatasetVersionListItem {
+  datasetVersionId: string;
+  ingestionRunId: string | null;
+  status: DatasetVersionRecord["status"];
+  createdAt: string;
+  publishedAt: string | null;
+  uploadedBy: string;
+  businessPeriods: DatasetVersionRecord["businessPeriods"];
+  datasetScope: DatasetVersionRecord["datasetScope"];
+  domainAvailability: DatasetVersionRecord["domainAvailability"];
+}
+
+export interface AuditEventListItem {
+  auditEventId: string;
+  datasetVersionId: string | null;
+  ingestionRunId: string | null;
+  actor: string;
+  action: string;
+  timestamp: string;
+  details?: {
+    publishability?: string;
+    textQualitySummary?: Record<string, unknown>;
+    mappingSummary?: Record<string, unknown>;
+  };
 }

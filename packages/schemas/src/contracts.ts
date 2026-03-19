@@ -68,6 +68,87 @@ export const reconciliationSummarySchema = z.object({
   issues: z.array(reconciliationIssueSchema)
 });
 
+export const aliasResolutionDomainSchema = z.enum(["institution", "insuranceLine", "financialAccount"]);
+export const aliasResolutionStrategySchema = z.enum([
+  "direct-alias",
+  "direct-canonical",
+  "normalized-alias",
+  "normalized-canonical",
+  "line-number-fallback",
+  "unresolved",
+  "ambiguous"
+]);
+
+export const mappingDomainSummarySchema = z.object({
+  totalAttempts: z.number().int().nonnegative(),
+  repairedByNormalization: z.number().int().nonnegative(),
+  aliasesMatched: z.number().int().nonnegative(),
+  fallbackByLineNumber: z.number().int().nonnegative(),
+  ambiguousAliases: z.number().int().nonnegative(),
+  unresolvedAliases: z.number().int().nonnegative(),
+  textsRequiringMojibakeRepair: z.number().int().nonnegative(),
+  aliasesResolvedAfterNormalization: z.number().int().nonnegative(),
+  aliasesResolvedByDirectAlias: z.number().int().nonnegative()
+});
+
+export const textQualitySummarySchema = z.object({
+  textsRequiringMojibakeRepair: z.number().int().nonnegative(),
+  aliasesResolvedAfterNormalization: z.number().int().nonnegative(),
+  aliasesResolvedByDirectAlias: z.number().int().nonnegative(),
+  aliasesResolvedByLineNumberFallback: z.number().int().nonnegative(),
+  ambiguousAliases: z.number().int().nonnegative(),
+  unresolvedAliases: z.number().int().nonnegative()
+});
+
+export const topAliasRepairSchema = z.object({
+  domain: aliasResolutionDomainSchema,
+  originalValue: z.string(),
+  repairedValue: z.string(),
+  normalizedValue: z.string(),
+  canonicalId: z.string(),
+  canonicalName: z.string(),
+  strategy: z.enum(["normalized-alias", "normalized-canonical"]),
+  count: z.number().int().positive()
+});
+
+export const aliasResolutionExampleSchema = z.object({
+  domain: aliasResolutionDomainSchema,
+  scope: z.string(),
+  originalValue: z.string(),
+  repairedValue: z.string(),
+  normalizedValue: z.string(),
+  canonicalId: z.string().nullable(),
+  canonicalName: z.string().nullable(),
+  strategy: aliasResolutionStrategySchema,
+  lineNumber: z.number().int().nullable(),
+  usedMojibakeRepair: z.boolean(),
+  requiredNormalization: z.boolean(),
+  candidateIds: z.array(z.string()),
+  candidateNames: z.array(z.string()),
+  ambiguityReason: z.string().nullable()
+});
+
+export const mappingSummarySchema = z.object({
+  repairedByNormalization: z.number().int().nonnegative(),
+  aliasesMatched: z.number().int().nonnegative(),
+  lineNumberFallback: z.number().int().nonnegative(),
+  fallbackByLineNumber: z.number().int().nonnegative(),
+  unresolved: z.number().int().nonnegative(),
+  unresolvedAliases: z.number().int().nonnegative(),
+  ambiguousAliases: z.number().int().nonnegative(),
+  totalAttempts: z.number().int().nonnegative(),
+  textQuality: textQualitySummarySchema,
+  domains: z.object({
+    institution: mappingDomainSummarySchema,
+    insuranceLine: mappingDomainSummarySchema,
+    financialAccount: mappingDomainSummarySchema
+  }),
+  topAliasRepairs: z.array(topAliasRepairSchema),
+  resolvedExamples: z.array(aliasResolutionExampleSchema),
+  ambiguousExamples: z.array(aliasResolutionExampleSchema),
+  unresolvedExamples: z.array(aliasResolutionExampleSchema)
+});
+
 export const datasetVersionRecordSchema = z.object({
   datasetVersionId: z.string(),
   ingestionRunId: z.string().nullable(),
@@ -116,6 +197,7 @@ export const datasetVersionRecordSchema = z.object({
     })
   }),
   fingerprint: z.string(),
+  mappingSummary: mappingSummarySchema.optional(),
   validationSummary: validationSummarySchema,
   reconciliationSummary: reconciliationSummarySchema
 });

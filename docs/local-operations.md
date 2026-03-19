@@ -69,7 +69,7 @@ Admin entry URL:
 
 | Method | Route | File | Purpose |
 |---|---|---|---|
-| `GET` | `/api/admin/system/status` | `apps/api/src/routes/admin/index.ts` | Active dataset + counters |
+| `GET` | `/api/admin/system/status` | `apps/api/src/routes/admin/index.ts` | Active dataset + counters + latest text-quality telemetry |
 | `GET` | `/api/admin/ingestions` | `apps/api/src/routes/admin/index.ts` | List staged runs |
 | `POST` | `/api/admin/ingestions` | `apps/api/src/routes/admin/index.ts` | Upload workbook set and create staging run |
 | `POST` | `/api/admin/publications/:ingestionRunId/publish` | `apps/api/src/routes/admin/index.ts` | Publish staged run |
@@ -146,7 +146,7 @@ Important:
 
 - URL: `http://localhost:3001/reconciliation`
 - API: `GET /api/admin/ingestions`
-- Result: latest run JSON shown for operational review
+- Result: latest run JSON shown for operational review, plus compact sections for repairs applied, resolved aliases, ambiguous aliases, and unresolved aliases
 
 ### Step 5: Publish
 

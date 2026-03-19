@@ -70,6 +70,83 @@ export interface ReconciliationSummary {
   issues: ReconciliationIssue[];
 }
 
+export type AliasResolutionDomain = "institution" | "insuranceLine" | "financialAccount";
+
+export type AliasResolutionStrategy =
+  | "direct-alias"
+  | "direct-canonical"
+  | "normalized-alias"
+  | "normalized-canonical"
+  | "line-number-fallback"
+  | "unresolved"
+  | "ambiguous";
+
+export interface MappingDomainSummary {
+  totalAttempts: number;
+  repairedByNormalization: number;
+  aliasesMatched: number;
+  fallbackByLineNumber: number;
+  ambiguousAliases: number;
+  unresolvedAliases: number;
+  textsRequiringMojibakeRepair: number;
+  aliasesResolvedAfterNormalization: number;
+  aliasesResolvedByDirectAlias: number;
+}
+
+export interface TextQualitySummary {
+  textsRequiringMojibakeRepair: number;
+  aliasesResolvedAfterNormalization: number;
+  aliasesResolvedByDirectAlias: number;
+  aliasesResolvedByLineNumberFallback: number;
+  ambiguousAliases: number;
+  unresolvedAliases: number;
+}
+
+export interface TopAliasRepair {
+  domain: AliasResolutionDomain;
+  originalValue: string;
+  repairedValue: string;
+  normalizedValue: string;
+  canonicalId: string;
+  canonicalName: string;
+  strategy: Extract<AliasResolutionStrategy, "normalized-alias" | "normalized-canonical">;
+  count: number;
+}
+
+export interface AliasResolutionExample {
+  domain: AliasResolutionDomain;
+  scope: string;
+  originalValue: string;
+  repairedValue: string;
+  normalizedValue: string;
+  canonicalId: string | null;
+  canonicalName: string | null;
+  strategy: AliasResolutionStrategy;
+  lineNumber: number | null;
+  usedMojibakeRepair: boolean;
+  requiredNormalization: boolean;
+  candidateIds: string[];
+  candidateNames: string[];
+  ambiguityReason: string | null;
+}
+
+export interface MappingSummary {
+  repairedByNormalization: number;
+  aliasesMatched: number;
+  lineNumberFallback: number;
+  fallbackByLineNumber: number;
+  unresolved: number;
+  unresolvedAliases: number;
+  ambiguousAliases: number;
+  totalAttempts: number;
+  textQuality: TextQualitySummary;
+  domains: Record<AliasResolutionDomain, MappingDomainSummary>;
+  topAliasRepairs: TopAliasRepair[];
+  resolvedExamples: AliasResolutionExample[];
+  ambiguousExamples: AliasResolutionExample[];
+  unresolvedExamples: AliasResolutionExample[];
+}
+
 export interface DatasetVersionRecord {
   datasetVersionId: string;
   ingestionRunId: string | null;
@@ -93,6 +170,7 @@ export interface DatasetVersionRecord {
     reference: { sourceProvided: boolean; records: number; publishable: boolean; missingReason: string | undefined };
   };
   fingerprint: string;
+  mappingSummary?: MappingSummary;
   validationSummary: ValidationSummary;
   reconciliationSummary: ReconciliationSummary;
 }

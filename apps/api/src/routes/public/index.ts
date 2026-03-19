@@ -39,7 +39,7 @@ export const publicRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get("/premiums/institutions", async (request) => {
     const service = await getIngestionService();
-    const premiumsByInstitution = (await service.getPublicPremiumsByInstitution()) as Array<Record<string, unknown>>;
+    const premiumsByInstitution = await service.getPublicPremiumsByInstitution();
     if (premiumsByInstitution.length === 0) {
       return pagination([], 1, 25);
     }
@@ -61,7 +61,7 @@ export const publicRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get("/premiums/lines", async (request) => {
     const service = await getIngestionService();
-    const premiumsByLine = (await service.getPublicPremiumsByLine()) as Array<Record<string, unknown>>;
+    const premiumsByLine = await service.getPublicPremiumsByLine();
     if (premiumsByLine.length === 0) {
       return pagination([], 1, 25);
     }
@@ -72,7 +72,7 @@ export const publicRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get("/financial/institutions", async (request) => {
     const service = await getIngestionService();
-    const financialHighlights = (await service.getPublicFinancialHighlights()) as Array<Record<string, unknown>>;
+    const financialHighlights = await service.getPublicFinancialHighlights();
     if (financialHighlights.length === 0) {
       return pagination([], 1, 25);
     }

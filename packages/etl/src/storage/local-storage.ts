@@ -21,6 +21,10 @@ async function readJson<T>(path: string): Promise<T> {
   return value;
 }
 
+function isFileNotFound(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "code" in error && (error as { code?: unknown }).code === "ENOENT";
+}
+
 function sanitizeOriginalFilename(input: string): string {
   return basename(input).replace(/[^a-zA-Z0-9._-]/g, "_");
 }
@@ -48,6 +52,10 @@ export class LocalStorageRepository {
   private activePointerCache: { datasetVersionId: string | null; updatedAt: string | null } | null = null;
   private datasetVersionCache = new Map<string, DatasetVersionRecord>();
   private artifactCache = new Map<string, unknown>();
+  private stagingRunCache = new Map<string, StagedIngestionRun>();
+  private auditEventCache = new Map<string, AuditEvent>();
+  private stagingRunsCacheLoaded = false;
+  private auditEventsCacheLoaded = false;
   private namespaceState: CacheNamespaceState | null = null;
   private readonly cacheCheckIntervalMs = 1000;
   private lastCacheCheckAt = 0;
@@ -84,6 +92,10 @@ export class LocalStorageRepository {
     this.activePointerCache = null;
     this.datasetVersionCache.clear();
     this.artifactCache.clear();
+    this.stagingRunCache.clear();
+    this.auditEventCache.clear();
+    this.stagingRunsCacheLoaded = false;
+    this.auditEventsCacheLoaded = false;
     this.namespaceState = nextNamespaceState ?? this.namespaceState;
     this.cacheStats.invalidations += 1;
     this.cacheStats.lastInvalidationReason = reason;
@@ -160,17 +172,32 @@ export class LocalStorageRepository {
   async writeStagingRun(run: StagedIngestionRun): Promise<void> {
     const runPath = join(storagePaths.staging, `${run.ingestionRunId}.json`);
     await writeJson(runPath, run);
+    this.stagingRunCache.set(run.ingestionRunId, run);
   }
 
   async readStagingRun(ingestionRunId: string): Promise<StagedIngestionRun> {
-    return await readJson<StagedIngestionRun>(join(storagePaths.staging, `${ingestionRunId}.json`));
+    const cached = this.stagingRunCache.get(ingestionRunId);
+    if (cached) {
+      return cached;
+    }
+
+    const run = await readJson<StagedIngestionRun>(join(storagePaths.staging, `${ingestionRunId}.json`));
+    this.stagingRunCache.set(ingestionRunId, run);
+    return run;
   }
 
   async listStagingRuns(): Promise<StagedIngestionRun[]> {
+    if (this.stagingRunsCacheLoaded) {
+      return Array.from(this.stagingRunCache.values());
+    }
+
     const entries = await readdir(storagePaths.staging);
-    return await Promise.all(
+    const runs = await Promise.all(
       entries.filter((entry) => entry.endsWith(".json")).map(async (entry) => await readJson<StagedIngestionRun>(join(storagePaths.staging, entry)))
     );
+    this.stagingRunCache = new Map(runs.map((run) => [run.ingestionRunId, run]));
+    this.stagingRunsCacheLoaded = true;
+    return runs;
   }
 
   async publishDataset(input: {
@@ -266,7 +293,14 @@ export class LocalStorageRepository {
       return null;
     }
 
-    return await this.readPublishedDatasetVersion(pointer.datasetVersionId);
+    try {
+      return await this.readPublishedDatasetVersion(pointer.datasetVersionId);
+    } catch (error) {
+      if (isFileNotFound(error)) {
+        return null;
+      }
+      throw error;
+    }
   }
 
   async readPublishedDatasetVersion(datasetVersionId: string): Promise<DatasetVersionRecord> {
@@ -305,6 +339,17 @@ export class LocalStorageRepository {
     return value;
   }
 
+  async readPublishedArtifactIfExists<T>(datasetVersionId: string, relativePath: string): Promise<T | null> {
+    try {
+      return await this.readPublishedArtifact<T>(datasetVersionId, relativePath);
+    } catch (error) {
+      if (isFileNotFound(error)) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
   async listPublishedDatasetVersions(): Promise<DatasetVersionRecord[]> {
     const entries = await readdir(storagePaths.published);
     const versions = await Promise.all(
@@ -323,13 +368,21 @@ export class LocalStorageRepository {
   async writeAuditEvent(event: AuditEvent): Promise<void> {
     const auditPath = join(storagePaths.audit, `${event.timestamp.replaceAll(":", "-")}-${event.auditEventId}.json`);
     await writeJson(auditPath, event);
+    this.auditEventCache.set(event.auditEventId, event);
   }
 
   async listAuditEvents(): Promise<AuditEvent[]> {
+    if (this.auditEventsCacheLoaded) {
+      return Array.from(this.auditEventCache.values());
+    }
+
     const entries = await readdir(storagePaths.audit);
-    return await Promise.all(
+    const events = await Promise.all(
       entries.filter((entry) => entry.endsWith(".json")).map(async (entry) => await readJson<AuditEvent>(join(storagePaths.audit, entry)))
     );
+    this.auditEventCache = new Map(events.map((event) => [event.auditEventId, event]));
+    this.auditEventsCacheLoaded = true;
+    return events;
   }
 
   async clearStorage(): Promise<void> {
@@ -371,9 +424,9 @@ export class LocalStorageRepository {
       },
       storage: {
         quarantineCount: quarantineEntries.length,
-        stagingCount: stagingEntries.length,
+        stagingCount: stagingEntries.filter((entry) => entry.endsWith(".json")).length,
         publishedCount: publishedEntries.length,
-        auditCount: auditEntries.length
+        auditCount: auditEntries.filter((entry) => entry.endsWith(".json")).length
       }
     };
   }

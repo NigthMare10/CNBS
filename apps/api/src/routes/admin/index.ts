@@ -47,8 +47,10 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
     if (reply.sent) return;
 
     const service = await getIngestionService();
-    const query = request.query as { page?: string; pageSize?: string };
-    const runs = (await service.listStagedRuns()).slice().sort((left, right) => right.createdAt.localeCompare(left.createdAt));
+    const query = request.query as { page?: string; pageSize?: string; detail?: string };
+    const runs = (query.detail === "full" ? await service.listStagedRuns() : await service.listStagedRunSummaries())
+      .slice()
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
     const { page, pageSize } = paginationParams(query);
     return paginate(runs, page, pageSize);
   });
@@ -104,7 +106,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
     const service = await getIngestionService();
     const query = request.query as { page?: string; pageSize?: string };
-    const versions = (await service.listPublishedDatasets())
+    const versions = (await service.listPublishedDatasetSummaries())
       .slice()
       .sort((left, right) => String(right.publishedAt ?? right.createdAt).localeCompare(String(left.publishedAt ?? left.createdAt)));
     const { page, pageSize } = paginationParams(query);
@@ -117,7 +119,7 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
 
     const service = await getIngestionService();
     const query = request.query as { page?: string; pageSize?: string };
-    const events = (await service.listAuditEvents()).slice().sort((left, right) => right.timestamp.localeCompare(left.timestamp));
+    const events = (await service.listAuditEventSummaries()).slice().sort((left, right) => right.timestamp.localeCompare(left.timestamp));
     const { page, pageSize } = paginationParams(query);
     return paginate(events, page, pageSize);
   });

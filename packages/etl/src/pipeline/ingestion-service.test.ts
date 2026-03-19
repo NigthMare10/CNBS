@@ -56,6 +56,21 @@ describe("IngestionService", () => {
     return workbookPath;
   }
 
+  async function createFinancialPositionWorkbook(
+    rows: Array<[string | number, string, string | number, string | number]>
+  ) {
+    const directory = await mkdtemp(join(tmpdir(), "cnbs-financial-position-"));
+    const workbookPath = join(directory, "EstadoSituacionFinanciera.xlsx");
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Balance");
+    worksheet.addRow(["Tipo", "Inst", "Logo", "FechaReporte", "Linea", "Cuenta", "MonedaNacional", "MonedaExtranjera"]);
+    for (const [linea, cuenta, monedaNacional, monedaExtranjera] of rows) {
+      worksheet.addRow([1, 601, "SEGUROS DAVIVIENDA", 46053, linea, cuenta, monedaNacional, monedaExtranjera]);
+    }
+    await workbook.xlsx.writeFile(workbookPath);
+    return workbookPath;
+  }
+
   beforeEach(async () => {
     await storage.clearStorage();
   });
@@ -331,7 +346,7 @@ describe("IngestionService", () => {
     expect(published.domainAvailability.financialPosition.publishable).toBe(true);
   });
 
-  it("does not block the real premiums + financialPosition 2025 files after mojibake repair and alias hardening", async () => {
+  it("persists text quality telemetry and alias repair matrix for the real 2025 files", async () => {
     const run = await service.ingestWorkbookSet({
       uploadedBy: "tester",
       files: [
@@ -355,7 +370,53 @@ describe("IngestionService", () => {
     expect(run.validationSummary.publishability).not.toBe("blocked");
     expect(run.validationSummary.issues.some((issue) => issue.code === "FINANCIAL_ACCOUNT_ALIAS_UNRESOLVED")).toBe(false);
     expect(run.validationSummary.issues.some((issue) => issue.code === "INSURANCE_LINE_ALIAS_UNRESOLVED")).toBe(false);
+    expect(run.mappingSummary.unresolvedAliases).toBe(0);
+    expect(run.mappingSummary.ambiguousAliases).toBe(0);
+    expect(run.mappingSummary.textQuality.textsRequiringMojibakeRepair).toBeGreaterThan(0);
+    expect(run.mappingSummary.topAliasRepairs.length).toBeGreaterThan(0);
     expect(run.draftDatasetVersion.domainAvailability.financialPosition.sourceProvided).toBe(true);
     expect(run.draftDatasetVersion.datasetScope).toBe("premiums-financial");
+
+    const published = await service.publishStagedRun(run.ingestionRunId, "tester");
+    const publishedMetadata = await storage.readPublishedDatasetVersion(published.datasetVersionId);
+    const status = await service.getOperationalStatus();
+
+    expect(publishedMetadata.mappingSummary?.unresolvedAliases).toBe(0);
+    expect(publishedMetadata.mappingSummary?.ambiguousAliases).toBe(0);
+    expect(publishedMetadata.mappingSummary?.topAliasRepairs.length).toBeGreaterThan(0);
+    expect(status.latestTextQuality?.mappingSummary?.unresolvedAliases).toBe(0);
+    expect(status.activeTextQuality?.mappingSummary?.unresolvedAliases).toBe(0);
+  });
+
+  it("blocks ambiguous financial aliases instead of accepting permissive matches", async () => {
+    const financialWorkbookPath = await createFinancialPositionWorkbook([
+      [1, "ACTIVOS", 0, 0],
+      [14, "TOTAL ACTIVOS", 100, 0],
+      [15, "PASIVOS", 80, 0],
+      ["xx", "TOTAL", 20, 0],
+      [27, "PATRIMONIO", 20, 0],
+      [34, "CUENTAS DE ORDEN Y REGISTRO", 0, 0]
+    ]);
+
+    const run = await service.ingestWorkbookSet({
+      uploadedBy: "tester",
+      files: [
+        {
+          filePath: financialWorkbookPath,
+          originalFilename: "EstadoSituacionFinanciera.xlsx",
+          mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+          sizeBytes: 4096
+        }
+      ]
+    });
+
+    const ambiguousIssue = run.validationSummary.issues.find((issue) => issue.code === "FINANCIAL_ACCOUNT_ALIAS_AMBIGUOUS");
+
+    expect(run.validationSummary.publishability).toBe("blocked");
+    expect(ambiguousIssue).toBeTruthy();
+    expect(run.mappingSummary.ambiguousAliases).toBeGreaterThan(0);
+    expect(run.mappingSummary.unresolvedAliases).toBe(0);
+    expect(run.mappingSummary.ambiguousExamples[0]?.candidateNames.length).toBeGreaterThan(1);
+    await expect(service.publishStagedRun(run.ingestionRunId, "tester")).rejects.toThrow();
   });
 });

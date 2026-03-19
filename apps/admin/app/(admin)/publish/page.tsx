@@ -10,12 +10,14 @@ export default async function PublishPage({ searchParams }: { searchParams: Prom
   const session = await requireAdminSession();
   const params = await searchParams;
   const page = Math.max(1, Number(params.page ?? 1));
-  const response = await getAdminJson<{ items: Array<Record<string, unknown>>; page: number; totalPages: number }>(
-    `/api/admin/ingestions?page=${page}&pageSize=8`,
-    session
-  );
+  const [response, systemStatus] = await Promise.all([
+    getAdminJson<{ items: Array<Record<string, unknown>>; page: number; totalPages: number }>(
+      `/api/admin/ingestions?page=${page}&pageSize=8`,
+      session
+    ),
+    getAdminJson<Record<string, unknown>>("/api/admin/system/status", session)
+  ]);
   const runs = response.items;
-  const systemStatus = await getAdminJson<Record<string, unknown>>("/api/admin/system/status", session);
   const activeDataset = systemStatus.activeDataset as Record<string, unknown> | undefined;
   const activeVersionId = typeof activeDataset?.datasetVersionId === "string" ? activeDataset.datasetVersionId : null;
 

@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  typedRoutes: true
+  typedRoutes: true,
+  transpilePackages: ["@cnbs/config", "@cnbs/domain", "@cnbs/ui"]
 };
 
 export default nextConfig;

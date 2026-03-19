@@ -84,4 +84,26 @@ describe("API integration", () => {
     expect(typeof payload.financialFactsCount).toBe("number");
     await app.close();
   }, 20000);
+
+  it("serves admin system status with text quality telemetry", async () => {
+    const app = buildApp();
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/admin/system/status",
+      headers: {
+        "x-cnbs-admin-secret": "local-dev-secret",
+        "x-cnbs-admin-role": "admin",
+        "x-cnbs-admin-user": "tester"
+      }
+    });
+    const payload: {
+      latestTextQuality?: { mappingSummary?: { unresolvedAliases?: number } };
+      activeTextQuality?: { mappingSummary?: { unresolvedAliases?: number } };
+    } = response.json();
+
+    expect(response.statusCode).toBe(200);
+    expect(payload.latestTextQuality?.mappingSummary?.unresolvedAliases).toBe(0);
+    expect(payload.activeTextQuality?.mappingSummary?.unresolvedAliases).toBe(0);
+    await app.close();
+  }, 20000);
 });

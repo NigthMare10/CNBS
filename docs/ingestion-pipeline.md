@@ -53,6 +53,8 @@ upload -> quarantine -> classify -> parse -> validate -> normalize -> reconcile 
 - canonical institution mapping
 - canonical ramo mapping
 - canonical account mapping
+- persist `mappingSummary` with repair counts, text-quality telemetry, top alias repairs, and sampled ambiguous/unresolved cases
+- keep ambiguous matches blocked unless a safe explicit strategy such as line-number fallback applies
 
 ### 7. Reconcile
 

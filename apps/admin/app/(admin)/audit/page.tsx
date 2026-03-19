@@ -1,6 +1,7 @@
 import { Card, SectionHeading } from "@cnbs/ui";
 import { AdminPagination } from "../../../components/admin-pagination";
 import { formatAdminDateTime } from "../../../lib/date-time";
+import { getMappingSummary, getMappingSummaryHeadline, mappingDomainLabel, mappingStrategyLabel } from "../../../lib/mapping-summary";
 import { getAdminJson } from "../../../lib/api";
 import { requireAdminSession } from "../../../lib/auth";
 
@@ -18,19 +19,29 @@ function stringValue(value: unknown, fallback = ""): string {
   return typeof value === "string" ? value : fallback;
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
+}
+
 export default async function AuditPage({ searchParams }: { searchParams: Promise<{ page?: string }> }) {
   const session = await requireAdminSession();
   const params = await searchParams;
   const page = Math.max(1, Number(params.page ?? 1));
-  const response = await getAdminJson<{ items: Array<Record<string, unknown>>; page: number; totalPages: number }>(
-    `/api/admin/audit?page=${page}&pageSize=12`,
-    session
-  );
+  const [response, systemStatus] = await Promise.all([
+    getAdminJson<{ items: Array<Record<string, unknown>>; page: number; totalPages: number }>(
+      `/api/admin/audit?page=${page}&pageSize=12`,
+      session
+    ),
+    getAdminJson<Record<string, unknown>>("/api/admin/system/status", session)
+  ]);
   const events = response.items;
   const counts = actionCounts(events);
-  const systemStatus = await getAdminJson<Record<string, unknown>>("/api/admin/system/status", session);
   const activeDataset = systemStatus.activeDataset as Record<string, unknown> | undefined;
   const activeVersionId = typeof activeDataset?.datasetVersionId === "string" ? activeDataset.datasetVersionId : null;
+  const latestTextQuality = asRecord(systemStatus.latestTextQuality);
+  const latestMappingSummary = getMappingSummary(latestTextQuality.mappingSummary);
+  const latestMappingHeadline = getMappingSummaryHeadline(latestMappingSummary);
+  const hasLatestMapping = typeof latestTextQuality.ingestionRunId === "string";
 
   return (
     <div className="admin-page">
@@ -51,24 +62,83 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
         </div>
       )}
 
+      {hasLatestMapping && (
+        <Card title="Calidad de texto más reciente" subtitle={`Corrida ${stringValue(latestTextQuality.ingestionRunId)} · ${formatAdminDateTime(stringValue(latestTextQuality.createdAt))}`}>
+          <div className={latestMappingSummary.ambiguousAliases === 0 && latestMappingSummary.unresolvedAliases === 0 ? "admin-alert--success" : "admin-alert"} style={{ marginBottom: 18 }}>
+            {latestMappingHeadline}
+          </div>
+          <div className="admin-grid-fluid">
+            <div className="admin-meta-item">
+              <span className="admin-meta-item__label">Mojibake reparado</span>
+              <span className="admin-meta-item__value">{latestMappingSummary.textQuality.textsRequiringMojibakeRepair}</span>
+            </div>
+            <div className="admin-meta-item">
+              <span className="admin-meta-item__label">Tras normalizar</span>
+              <span className="admin-meta-item__value">{latestMappingSummary.textQuality.aliasesResolvedAfterNormalization}</span>
+            </div>
+            <div className="admin-meta-item">
+              <span className="admin-meta-item__label">Match directo</span>
+              <span className="admin-meta-item__value">{latestMappingSummary.textQuality.aliasesResolvedByDirectAlias}</span>
+            </div>
+            <div className="admin-meta-item">
+              <span className="admin-meta-item__label">Fallback por línea</span>
+              <span className="admin-meta-item__value">{latestMappingSummary.fallbackByLineNumber}</span>
+            </div>
+            <div className="admin-meta-item">
+              <span className="admin-meta-item__label">Ambiguos</span>
+              <span className="admin-meta-item__value">{latestMappingSummary.ambiguousAliases}</span>
+            </div>
+            <div className="admin-meta-item">
+              <span className="admin-meta-item__label">No resueltos</span>
+              <span className="admin-meta-item__value">{latestMappingSummary.unresolvedAliases}</span>
+            </div>
+          </div>
+          {latestMappingSummary.topAliasRepairs.length > 0 && (
+            <div className="admin-list" style={{ marginTop: 18 }}>
+              {latestMappingSummary.topAliasRepairs.slice(0, 3).map((repair, index) => (
+                <div className="admin-list-row" key={`${repair.domain}-${repair.canonicalId}-${index}`}>
+                  <div className="admin-list-row__content">
+                    <span className="admin-list-row__title">{repair.canonicalName}</span>
+                    <span className="admin-list-row__meta">
+                      {mappingDomainLabel(repair.domain)} · {repair.originalValue} {"->"} {repair.repairedValue} · Veces: {repair.count}
+                    </span>
+                  </div>
+                  <div className="admin-help">{mappingStrategyLabel(repair.strategy)}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Card>
+      )}
+
       <Card>
         {events.length > 0 ? (
           <div className="admin-list">
-            {events.map((event: Record<string, unknown>) => (
-              <div key={String(event.auditEventId)} className="admin-list-row">
-                <div className="admin-list-row__content">
-                  <span className="admin-list-row__title">{String(event.action)}</span>
-                  <span className="admin-list-row__meta">{formatAdminDateTime(stringValue(event.timestamp))}</span>
-                  <span className="admin-list-row__meta">
-                    ingestionRunId: {stringValue(event.ingestionRunId, "n/d")} · datasetVersionId: {stringValue(event.datasetVersionId, "n/d")}
-                  </span>
+            {events.map((event: Record<string, unknown>) => {
+              const details = asRecord(event.details);
+              const eventMapping = details.mappingSummary ? getMappingSummary(details.mappingSummary) : null;
+
+              return (
+                <div key={String(event.auditEventId)} className="admin-list-row">
+                  <div className="admin-list-row__content">
+                    <span className="admin-list-row__title">{String(event.action)}</span>
+                    <span className="admin-list-row__meta">{formatAdminDateTime(stringValue(event.timestamp))}</span>
+                    <span className="admin-list-row__meta">
+                      ingestionRunId: {stringValue(event.ingestionRunId, "n/d")} · datasetVersionId: {stringValue(event.datasetVersionId, "n/d")}
+                    </span>
+                    {eventMapping && (
+                      <span className="admin-list-row__meta">
+                        texto: mojibake {eventMapping.textQuality.textsRequiringMojibakeRepair} · normalizados {eventMapping.textQuality.aliasesResolvedAfterNormalization} · directos {eventMapping.textQuality.aliasesResolvedByDirectAlias} · fallback {eventMapping.fallbackByLineNumber} · ambiguos {eventMapping.ambiguousAliases} · no resueltos {eventMapping.unresolvedAliases}
+                      </span>
+                    )}
+                  </div>
+                  <div className="admin-actions">
+                    {activeVersionId && stringValue(event.datasetVersionId) === activeVersionId ? <span className="admin-alert--success" style={{ padding: "6px 10px", fontSize: 12 }}>Versión activa</span> : null}
+                    <div className="admin-help">Actor: {String(event.actor)}</div>
+                  </div>
                 </div>
-                <div className="admin-actions">
-                  {activeVersionId && stringValue(event.datasetVersionId) === activeVersionId ? <span className="admin-alert--success" style={{ padding: "6px 10px", fontSize: 12 }}>Versión activa</span> : null}
-                  <div className="admin-help">Actor: {String(event.actor)}</div>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         ) : (
           <div className="admin-alert">No hay eventos de auditoría disponibles todavía.</div>

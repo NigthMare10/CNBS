@@ -18,6 +18,8 @@
 - normalization dictionaries
 - text repair
 - canonical mapping
+- future regressions for mojibake, accentless variants, slash variants, double spaces, and unusual casing
+- ambiguous matching guardrails so broad candidates remain blocked instead of accepted silently
 - aggregation formulas
 - version pointer switching
 
@@ -51,6 +53,7 @@
 - corrupt zip
 - encoded text issues
 - inconsistent names
+- ambiguous alias candidates
 - mismatched periods
 - reconciliation critical failure
 - reference-only upload blocked

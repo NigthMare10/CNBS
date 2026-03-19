@@ -7,12 +7,20 @@ import {
   mergePublishability,
   type AuditEvent,
   type DatasetVersionRecord,
+  type MappingSummary,
   type ReconciliationSummary,
   type SourceFileRecord,
   type ValidationIssue,
   type ValidationSummary
 } from "@cnbs/domain";
-import type { UploadedWorkbookInput, StagedIngestionRun, WorkbookDetectionResult } from "../types";
+import type {
+  AuditEventListItem,
+  DatasetVersionListItem,
+  StagedIngestionRun,
+  StagedIngestionRunListItem,
+  UploadedWorkbookInput,
+  WorkbookDetectionResult
+} from "../types";
 import { inspectWorkbookSecurity } from "../security/workbook-security";
 import { detectWorkbookKind, WorkbookClassificationError } from "../workbooks/signatures";
 import { parsePremiumWorkbook } from "../parsers/premiums";
@@ -21,6 +29,7 @@ import { parseIncomeStatementWorkbook } from "../parsers/income-statement";
 import { parseReferenceWorkbook } from "../parsers/reference";
 import { validateParsedWorkbooks } from "./validation";
 import { canonicalCatalogs, normalizeFinancialPositionFacts, normalizeIncomeStatementRows, normalizePremiumFacts } from "./normalization";
+import { buildMappingSummary, createEmptyMappingSummary, createMappingSummaryBuilder } from "./mapping-summary";
 import { reconcileAgainstReference } from "../reconciliation/rules";
 import { buildDatasetArtifacts } from "../publish/dataset-builder";
 import { LocalStorageRepository } from "../storage/local-storage";
@@ -88,7 +97,135 @@ function domainAvailabilityFromInput(input: {
 }
 
 export class IngestionService {
+  private publicOverviewCache = new Map<string, Record<string, unknown>>();
+  private publicRankingsCache = new Map<string, Record<string, unknown>>();
+  private publicInstitutionDetailCache = new Map<string, Record<string, unknown>>();
+
   constructor(private readonly storage = new LocalStorageRepository()) {}
+
+  private compactMappingSummary(mappingSummary: MappingSummary | undefined) {
+    if (!mappingSummary) {
+      return null;
+    }
+
+    return {
+      repairedByNormalization: mappingSummary.repairedByNormalization,
+      aliasesMatched: mappingSummary.aliasesMatched,
+      fallbackByLineNumber: mappingSummary.fallbackByLineNumber,
+      ambiguousAliases: mappingSummary.ambiguousAliases,
+      unresolvedAliases: mappingSummary.unresolvedAliases,
+      totalAttempts: mappingSummary.totalAttempts,
+      textQuality: mappingSummary.textQuality,
+      domains: mappingSummary.domains,
+      topAliasRepairs: mappingSummary.topAliasRepairs.slice(0, 5)
+    };
+  }
+
+  private classificationIssues(summary: ValidationSummary): ValidationIssue[] {
+    return summary.issues.filter((issue) => issue.code === "WORKBOOK_SCHEMA_UNRECOGNIZED");
+  }
+
+  private toStagedRunListItem(run: StagedIngestionRun): StagedIngestionRunListItem {
+    return {
+      ingestionRunId: run.ingestionRunId,
+      createdAt: run.createdAt,
+      uploadedBy: run.uploadedBy,
+      publicationState: run.publicationState,
+      publishedDatasetVersionId: run.publishedDatasetVersionId,
+      publishedAt: run.publishedAt,
+      sourceFiles: run.sourceFiles,
+      mappingSummary: {
+        ...createEmptyMappingSummary(),
+        ...this.compactMappingSummary(run.mappingSummary)
+      },
+      validationSummary: {
+        publishability: run.validationSummary.publishability,
+        issues: this.classificationIssues(run.validationSummary)
+      },
+      reconciliationSummary: {
+        publishability: run.reconciliationSummary.publishability,
+        issues: []
+      },
+      draftDatasetVersion: {
+        datasetVersionId: run.draftDatasetVersion.datasetVersionId,
+        ingestionRunId: run.draftDatasetVersion.ingestionRunId,
+        status: run.draftDatasetVersion.status,
+        createdAt: run.draftDatasetVersion.createdAt,
+        publishedAt: run.draftDatasetVersion.publishedAt,
+        uploadedBy: run.draftDatasetVersion.uploadedBy,
+        sourceFiles: run.draftDatasetVersion.sourceFiles,
+        businessPeriods: run.draftDatasetVersion.businessPeriods,
+        datasetScope: run.draftDatasetVersion.datasetScope,
+        domainAvailability: run.draftDatasetVersion.domainAvailability,
+        fingerprint: run.draftDatasetVersion.fingerprint,
+        ...(run.draftDatasetVersion.mappingSummary ? { mappingSummary: run.draftDatasetVersion.mappingSummary } : {}),
+        validationSummary: {
+          publishability: run.draftDatasetVersion.validationSummary.publishability,
+          issues: []
+        },
+        reconciliationSummary: {
+          publishability: run.draftDatasetVersion.reconciliationSummary.publishability,
+          issues: []
+        }
+      }
+    };
+  }
+
+  private toDatasetVersionListItem(dataset: DatasetVersionRecord): DatasetVersionListItem {
+    return {
+      datasetVersionId: dataset.datasetVersionId,
+      ingestionRunId: dataset.ingestionRunId,
+      status: dataset.status,
+      createdAt: dataset.createdAt,
+      publishedAt: dataset.publishedAt,
+      uploadedBy: dataset.uploadedBy,
+      businessPeriods: dataset.businessPeriods,
+      datasetScope: dataset.datasetScope,
+      domainAvailability: dataset.domainAvailability
+    };
+  }
+
+  private toAuditEventListItem(event: AuditEvent): AuditEventListItem {
+    const details = event.details ?? {};
+    const publishability = typeof details.publishability === "string" ? details.publishability : undefined;
+    const textQualitySummary =
+      typeof details.textQualitySummary === "object" && details.textQualitySummary !== null
+        ? (details.textQualitySummary as Record<string, unknown>)
+        : undefined;
+    const mappingSummary =
+      typeof details.mappingSummary === "object" && details.mappingSummary !== null
+        ? (this.compactMappingSummary(details.mappingSummary as MappingSummary) ?? undefined)
+        : undefined;
+
+    return {
+      auditEventId: event.auditEventId,
+      datasetVersionId: event.datasetVersionId,
+      ingestionRunId: event.ingestionRunId,
+      actor: event.actor,
+      action: event.action,
+      timestamp: event.timestamp,
+      details: {
+        ...(publishability ? { publishability } : {}),
+        ...(textQualitySummary ? { textQualitySummary } : {}),
+        ...(mappingSummary ? { mappingSummary } : {})
+      }
+    };
+  }
+
+  private async readPublishedArrayArtifact(datasetVersionId: string, relativePath: string, limit?: number): Promise<Record<string, unknown>[]> {
+    const value = await this.storage.readPublishedArtifactIfExists<unknown>(datasetVersionId, relativePath);
+    if (!Array.isArray(value)) {
+      return [];
+    }
+
+    const items = value.filter((entry): entry is Record<string, unknown> => typeof entry === "object" && entry !== null);
+    return typeof limit === "number" ? items.slice(0, limit) : items;
+  }
+
+  private async readPublishedRecordArtifact(datasetVersionId: string, relativePath: string): Promise<Record<string, unknown>> {
+    const value = await this.storage.readPublishedArtifactIfExists<unknown>(datasetVersionId, relativePath);
+    return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : {};
+  }
 
   private toPublicDatasetMetadata(dataset: DatasetVersionRecord) {
     return {
@@ -210,20 +347,23 @@ export class IngestionService {
     });
 
     const datasetVersionId = createDatasetVersionId();
+    const mappingSummaryBuilder = createMappingSummaryBuilder();
     const normalizedPremiums = premiumsFile
       ? normalizePremiumFacts({
           datasetVersionId,
           sourceFile: premiumsFile,
-          rows: premiumRows
+          rows: premiumRows,
+          mappingSummaryBuilder
         })
-      : { facts: [], period: undefined, issues: [], stats: { repairedByNormalization: 0, aliasesMatched: 0, unresolved: 0 } };
+      : { facts: [], period: undefined, issues: [] };
     const normalizedFinancials = financialFile
       ? normalizeFinancialPositionFacts({
           datasetVersionId,
           sourceFile: financialFile,
-          rows: financialRows
+          rows: financialRows,
+          mappingSummaryBuilder
         })
-      : { facts: [], period: undefined, issues: [], stats: { repairedByNormalization: 0, aliasesMatched: 0, lineNumberFallback: 0, unresolved: 0 } };
+      : { facts: [], period: undefined, issues: [] };
     const normalizedIncomeStatement = incomeStatementFile
       ? normalizeIncomeStatementRows({
           datasetVersionId,
@@ -231,6 +371,7 @@ export class IngestionService {
           rows: incomeStatementRows
         })
       : { facts: [], records: 0, period: undefined, issues: [] };
+    const mappingSummary = buildMappingSummary(mappingSummaryBuilder);
 
     const normalizationSummary: ValidationSummary = {
       publishability: [...validationIssues, ...parsedValidation.issues, ...normalizedPremiums.issues, ...normalizedFinancials.issues, ...normalizedIncomeStatement.issues].some(
@@ -301,6 +442,7 @@ export class IngestionService {
         hasReference: Boolean(referenceFile)
       }),
       fingerprint: fingerprintSourceFiles(storedFiles),
+      mappingSummary,
       validationSummary: normalizationSummary,
       reconciliationSummary
     };
@@ -313,13 +455,7 @@ export class IngestionService {
       publishedDatasetVersionId: null,
       publishedAt: null,
       sourceFiles: storedFiles,
-      mappingSummary: {
-        repairedByNormalization:
-          normalizedPremiums.stats.repairedByNormalization + normalizedFinancials.stats.repairedByNormalization,
-        aliasesMatched: normalizedPremiums.stats.aliasesMatched + normalizedFinancials.stats.aliasesMatched,
-        lineNumberFallback: normalizedFinancials.stats.lineNumberFallback,
-        unresolved: normalizedPremiums.stats.unresolved + normalizedFinancials.stats.unresolved
-      },
+      mappingSummary,
       validationSummary: normalizationSummary,
       reconciliationSummary,
       draftDatasetVersion,
@@ -335,7 +471,9 @@ export class IngestionService {
       details: {
         publishability: mergePublishability(normalizationSummary, reconciliationSummary),
         validationIssues: normalizationSummary.issues.length,
-        reconciliationIssues: reconciliationSummary.issues.length
+        reconciliationIssues: reconciliationSummary.issues.length,
+        mappingSummary,
+        textQualitySummary: mappingSummary.textQuality
       }
     }));
 
@@ -372,7 +510,9 @@ export class IngestionService {
       ingestionRunId,
       datasetVersionId: datasetVersion.datasetVersionId,
       details: {
-        publishability
+        publishability,
+        mappingSummary: run.mappingSummary,
+        textQualitySummary: run.mappingSummary.textQuality
       }
     }));
 
@@ -416,22 +556,30 @@ export class IngestionService {
       };
     }
 
+    const cached = this.publicOverviewCache.get(active.datasetVersionId);
+    if (cached) {
+      return cached;
+    }
+
     const [executiveKpis, premiumsByInstitution, premiumsByLine, financialHighlights, incomeStatementHighlights] = await Promise.all([
-      this.storage.readPublishedArtifact(active.datasetVersionId, "aggregates/executive-kpis.json"),
-      this.storage.readPublishedArtifact(active.datasetVersionId, "aggregates/premiums-by-institution.json"),
-      this.storage.readPublishedArtifact(active.datasetVersionId, "aggregates/premiums-by-line.json"),
-      this.storage.readPublishedArtifact(active.datasetVersionId, "aggregates/financial-highlights.json"),
-      this.storage.readPublishedArtifact(active.datasetVersionId, "aggregates/income-statement-highlights.json")
+      this.readPublishedArrayArtifact(active.datasetVersionId, "aggregates/executive-kpis.json", 12),
+      this.readPublishedArrayArtifact(active.datasetVersionId, "aggregates/premiums-by-institution.json", 12),
+      this.readPublishedArrayArtifact(active.datasetVersionId, "aggregates/premiums-by-line.json", 12),
+      this.readPublishedArrayArtifact(active.datasetVersionId, "aggregates/financial-highlights.json", 12),
+      this.readPublishedArrayArtifact(active.datasetVersionId, "aggregates/income-statement-highlights.json", 12)
     ]);
 
-    return {
+    const payload = {
       metadata: this.toPublicDatasetMetadata(active),
       executiveKpis,
-      premiumsByInstitution: Array.isArray(premiumsByInstitution) ? premiumsByInstitution.slice(0, 12) : [],
-      premiumsByLine: Array.isArray(premiumsByLine) ? premiumsByLine.slice(0, 12) : [],
-      financialHighlights: Array.isArray(financialHighlights) ? financialHighlights.slice(0, 12) : [],
-      incomeStatementHighlights: Array.isArray(incomeStatementHighlights) ? incomeStatementHighlights.slice(0, 12) : []
+      premiumsByInstitution,
+      premiumsByLine,
+      financialHighlights,
+      incomeStatementHighlights
     };
+
+    this.publicOverviewCache.set(active.datasetVersionId, payload);
+    return payload;
   }
 
   async getPublicRankings() {
@@ -440,7 +588,14 @@ export class IngestionService {
       return { premiums: [], assets: [], equity: [], netIncome: [] };
     }
 
-    return await this.storage.readPublishedArtifact(active.datasetVersionId, "aggregates/rankings.json");
+    const cached = this.publicRankingsCache.get(active.datasetVersionId);
+    if (cached) {
+      return cached;
+    }
+
+    const rankings = await this.readPublishedRecordArtifact(active.datasetVersionId, "aggregates/rankings.json");
+    this.publicRankingsCache.set(active.datasetVersionId, rankings);
+    return rankings;
   }
 
   async getPublicPremiumsByInstitution() {
@@ -449,7 +604,7 @@ export class IngestionService {
       return [];
     }
 
-    return await this.storage.readPublishedArtifact(active.datasetVersionId, "aggregates/premiums-by-institution.json");
+    return await this.readPublishedArrayArtifact(active.datasetVersionId, "aggregates/premiums-by-institution.json");
   }
 
   async getPublicPremiumsByLine() {
@@ -458,7 +613,7 @@ export class IngestionService {
       return [];
     }
 
-    return await this.storage.readPublishedArtifact(active.datasetVersionId, "aggregates/premiums-by-line.json");
+    return await this.readPublishedArrayArtifact(active.datasetVersionId, "aggregates/premiums-by-line.json");
   }
 
   async getPublicFinancialHighlights() {
@@ -467,7 +622,7 @@ export class IngestionService {
       return [];
     }
 
-    return await this.storage.readPublishedArtifact(active.datasetVersionId, "aggregates/financial-highlights.json");
+    return await this.readPublishedArrayArtifact(active.datasetVersionId, "aggregates/financial-highlights.json");
   }
 
   async getPublicIncomeStatementHighlights() {
@@ -476,7 +631,7 @@ export class IngestionService {
       return [];
     }
 
-    return await this.storage.readPublishedArtifact(active.datasetVersionId, "aggregates/income-statement-highlights.json");
+    return await this.readPublishedArrayArtifact(active.datasetVersionId, "aggregates/income-statement-highlights.json");
   }
 
   async getPublicInstitutionDetail(institutionId: string) {
@@ -485,7 +640,13 @@ export class IngestionService {
       return null;
     }
 
-    const institutions = await this.storage.readPublishedArtifact<Array<{ institutionId: string }>>(
+    const cacheKey = `${active.datasetVersionId}:${institutionId}`;
+    const cached = this.publicInstitutionDetailCache.get(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
+    const institutions = await this.readPublishedArrayArtifact(
       active.datasetVersionId,
       "catalogs/institutions.json"
     );
@@ -496,46 +657,53 @@ export class IngestionService {
     }
 
     try {
-      const detail = await this.storage.readPublishedArtifact<Record<string, unknown>>(
+      const detail = await this.storage.readPublishedArtifactIfExists<Record<string, unknown>>(
         active.datasetVersionId,
         `aggregates/institutions/${institutionId}.json`
       );
-      return {
+      if (!detail) {
+        throw new Error("institution-detail-missing");
+      }
+      const payload = {
         ...detail,
         domainAvailability: active.domainAvailability,
         datasetScope: active.datasetScope
       };
+      this.publicInstitutionDetailCache.set(cacheKey, payload);
+      return payload;
     } catch {
       const [premiumFacts, financialFacts, premiumsByInstitution, financialHighlights, incomeStatementHighlights] = await Promise.all([
-        this.storage.readPublishedArtifact(active.datasetVersionId, "facts/premiums.json"),
-        this.storage.readPublishedArtifact(active.datasetVersionId, "facts/financial-position.json"),
-        this.storage.readPublishedArtifact(active.datasetVersionId, "aggregates/premiums-by-institution.json"),
-        this.storage.readPublishedArtifact(active.datasetVersionId, "aggregates/financial-highlights.json"),
-        this.storage.readPublishedArtifact(active.datasetVersionId, "aggregates/income-statement-highlights.json")
+        this.readPublishedArrayArtifact(active.datasetVersionId, "facts/premiums.json"),
+        this.readPublishedArrayArtifact(active.datasetVersionId, "facts/financial-position.json"),
+        this.readPublishedArrayArtifact(active.datasetVersionId, "aggregates/premiums-by-institution.json"),
+        this.readPublishedArrayArtifact(active.datasetVersionId, "aggregates/financial-highlights.json"),
+        this.readPublishedArrayArtifact(active.datasetVersionId, "aggregates/income-statement-highlights.json")
       ]);
 
-      const institutionPremiumFacts = (premiumFacts as Array<Record<string, unknown>>)
+      const institutionPremiumFacts = premiumFacts
         .filter((fact) => fact.institutionId === institutionId)
         .slice(0, 20);
 
-      return {
+      const payload = {
         institution,
-        premiumSummary: (premiumsByInstitution as Array<Record<string, unknown>>).find(
+        premiumSummary: premiumsByInstitution.find(
           (item) => item.institutionId === institutionId
         ),
-        financialSummary: (financialHighlights as Array<Record<string, unknown>>).find(
+        financialSummary: financialHighlights.find(
           (item) => item.institutionId === institutionId
         ),
-        incomeStatementSummary: (incomeStatementHighlights as Array<Record<string, unknown>>).find(
+        incomeStatementSummary: incomeStatementHighlights.find(
           (item) => item.institutionId === institutionId
         ),
         premiumFactsPreview: institutionPremiumFacts,
-        financialFactsCount: (financialFacts as Array<Record<string, unknown>>).filter(
+        financialFactsCount: financialFacts.filter(
           (fact) => fact.institutionId === institutionId
         ).length,
         domainAvailability: active.domainAvailability,
         datasetScope: active.datasetScope
       };
+      this.publicInstitutionDetailCache.set(cacheKey, payload);
+      return payload;
     }
   }
 
@@ -567,20 +735,32 @@ export class IngestionService {
     return await this.storage.listPublishedDatasetVersions();
   }
 
+  async listPublishedDatasetSummaries(): Promise<DatasetVersionListItem[]> {
+    return (await this.storage.listPublishedDatasetVersions()).map((dataset) => this.toDatasetVersionListItem(dataset));
+  }
+
   async listStagedRuns() {
     return await this.storage.listStagingRuns();
+  }
+
+  async listStagedRunSummaries(): Promise<StagedIngestionRunListItem[]> {
+    return (await this.storage.listStagingRuns()).map((run) => this.toStagedRunListItem(run));
   }
 
   async listAuditEvents() {
     return await this.storage.listAuditEvents();
   }
 
+  async listAuditEventSummaries(): Promise<AuditEventListItem[]> {
+    return (await this.storage.listAuditEvents()).map((event) => this.toAuditEventListItem(event));
+  }
+
   async getOperationalStatus() {
     const [activeDataset, stagedRuns, publishedDatasets, auditEvents, storageMetrics] = await Promise.all([
       this.storage.getActiveDatasetVersion(),
-      this.storage.listStagingRuns(),
-      this.storage.listPublishedDatasetVersions(),
-      this.storage.listAuditEvents(),
+      this.listStagedRunSummaries(),
+      this.listPublishedDatasetSummaries(),
+      this.listAuditEventSummaries(),
       this.storage.getOperationalMetrics()
     ]);
 
@@ -597,7 +777,8 @@ export class IngestionService {
         publishedAt: run.publishedAt,
         datasetScope: run.draftDatasetVersion.datasetScope,
         validationPublishability: run.validationSummary.publishability,
-        reconciliationPublishability: run.reconciliationSummary.publishability
+        reconciliationPublishability: run.reconciliationSummary.publishability,
+         mappingSummary: this.compactMappingSummary(run.mappingSummary)
       }));
 
     const latestPublishedVersions = publishedDatasets
@@ -613,14 +794,34 @@ export class IngestionService {
         status: dataset.status
       }));
 
+    const latestStagedRun = stagedRuns
+      .slice()
+      .sort((left, right) => right.createdAt.localeCompare(left.createdAt))[0];
+
     return {
       activeDataset: activeDataset ? this.toPublicDatasetMetadata(activeDataset) : null,
+      activeTextQuality: activeDataset?.mappingSummary
+        ? {
+            datasetVersionId: activeDataset.datasetVersionId,
+            publishedAt: activeDataset.publishedAt,
+            mappingSummary: this.compactMappingSummary(activeDataset.mappingSummary)
+          }
+        : null,
       counts: {
         stagedRuns: stagedRuns.length,
         publishedVersions: publishedDatasets.length,
         auditEvents: auditEvents.length
       },
       latestStagedRuns,
+      latestTextQuality: latestStagedRun
+        ? {
+            ingestionRunId: latestStagedRun.ingestionRunId,
+            createdAt: latestStagedRun.createdAt,
+            publicationState: latestStagedRun.publicationState,
+            publishability: mergePublishability(latestStagedRun.validationSummary, latestStagedRun.reconciliationSummary),
+            mappingSummary: this.compactMappingSummary(latestStagedRun.mappingSummary)
+          }
+        : null,
       latestPublishedVersions,
       storageMetrics
     };
@@ -667,12 +868,7 @@ export class IngestionService {
       publishedDatasetVersionId: null,
       publishedAt: null,
       sourceFiles,
-      mappingSummary: {
-        repairedByNormalization: 0,
-        aliasesMatched: 0,
-        lineNumberFallback: 0,
-        unresolved: 0
-      },
+      mappingSummary: createEmptyMappingSummary(),
       validationSummary,
       reconciliationSummary,
       draftDatasetVersion: {
@@ -704,6 +900,7 @@ export class IngestionService {
           hasReference: sourceFiles.some((file) => file.kind === "reference")
         }),
         fingerprint: fingerprintSourceFiles(sourceFiles),
+        mappingSummary: createEmptyMappingSummary(),
         validationSummary,
         reconciliationSummary
       },

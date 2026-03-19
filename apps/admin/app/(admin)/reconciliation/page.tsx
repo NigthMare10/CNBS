@@ -4,6 +4,7 @@ import { DetectedWorkbooksList } from "../../../components/detected-workbooks-li
 import { JsonViewerWithCopy } from "../../../components/json-viewer-with-copy";
 import { WorkbookClassificationSummary } from "../../../components/workbook-classification-summary";
 import { adminTimeZoneLabel, formatAdminDateTime } from "../../../lib/date-time";
+import { getMappingSummary, getMappingSummaryHeadline, mappingDomainLabel, mappingStrategyLabel } from "../../../lib/mapping-summary";
 import { getOperationalLabel } from "../../../lib/traceability";
 import { getAdminJson } from "../../../lib/api";
 import { requireAdminSession } from "../../../lib/auth";
@@ -45,10 +46,37 @@ function stringValue(value: unknown, fallback = ""): string {
   return typeof value === "string" ? value : fallback;
 }
 
+function renderResolutionMeta(example: {
+  repairedValue: string;
+  normalizedValue: string;
+  canonicalName: string | null;
+  candidateNames: string[];
+  lineNumber: number | null;
+  ambiguityReason: string | null;
+}): string {
+  const segments = [
+    `Reparado: ${example.repairedValue || "n/d"}`,
+    `Normalizado: ${example.normalizedValue || "n/d"}`,
+    `Canónico: ${example.canonicalName ?? "n/d"}`
+  ];
+
+  if (example.lineNumber !== null) {
+    segments.push(`Línea: ${example.lineNumber}`);
+  }
+  if (example.candidateNames.length > 0) {
+    segments.push(`Candidatos: ${example.candidateNames.join(", ")}`);
+  }
+  if (example.ambiguityReason) {
+    segments.push(`Detalle: ${example.ambiguityReason}`);
+  }
+
+  return segments.join(" · ");
+}
+
 export default async function ReconciliationPage() {
   const session = await requireAdminSession();
   const runsResponse = await getAdminJson<{ items: Array<Record<string, unknown>>; page: number; totalPages: number }>(
-    "/api/admin/ingestions?page=1&pageSize=1",
+    "/api/admin/ingestions?page=1&pageSize=1&detail=full",
     session
   );
   const latest = runsResponse.items.at(0);
@@ -70,10 +98,8 @@ export default async function ReconciliationPage() {
   const reconciliationIssues = issuesOf(latest.reconciliationSummary);
   const validationCounts = countBySeverity(validationIssues);
   const reconciliationCounts = countBySeverity(reconciliationIssues);
-  const unresolvedAliasIssues = validationIssues.filter((issue) => {
-    const code = stringValue(issue.code);
-    return code === "FINANCIAL_ACCOUNT_ALIAS_UNRESOLVED" || code === "INSURANCE_LINE_ALIAS_UNRESOLVED";
-  });
+  const mappingSummary = getMappingSummary(latest.mappingSummary);
+  const mappingHeadline = getMappingSummaryHeadline(mappingSummary);
 
   return (
     <div className="admin-page">
@@ -125,48 +151,181 @@ export default async function ReconciliationPage() {
         </div>
 
         <div className="admin-grid-2" style={{ marginTop: 22 }}>
-          <Card title="Resumen de normalización" subtitle="Qué se reparó y qué sigue pendiente durante el matching de aliases.">
+          <Card title="Diagnóstico de matching" subtitle="Matriz compacta de reparaciones, calidad de texto y seguridad de matching.">
+            <div className={mappingSummary.ambiguousAliases === 0 && mappingSummary.unresolvedAliases === 0 ? "admin-alert--success" : "admin-alert"} style={{ marginBottom: 18 }}>
+              {mappingHeadline}
+            </div>
             <div className="admin-meta-list">
               <div className="admin-meta-item">
-                <span className="admin-meta-item__label">Aliases reparados por normalización</span>
-                <span className="admin-meta-item__value">{Number((latest.mappingSummary as Record<string, unknown> | undefined)?.repairedByNormalization ?? 0)}</span>
+                <span className="admin-meta-item__label">repairedByNormalization</span>
+                <span className="admin-meta-item__value">{mappingSummary.repairedByNormalization}</span>
               </div>
               <div className="admin-meta-item">
-                <span className="admin-meta-item__label">Aliases resueltos</span>
-                <span className="admin-meta-item__value">{Number((latest.mappingSummary as Record<string, unknown> | undefined)?.aliasesMatched ?? 0)}</span>
+                <span className="admin-meta-item__label">aliasesMatched</span>
+                <span className="admin-meta-item__value">{mappingSummary.aliasesMatched}</span>
               </div>
               <div className="admin-meta-item">
-                <span className="admin-meta-item__label">Fallback por línea</span>
-                <span className="admin-meta-item__value">{Number((latest.mappingSummary as Record<string, unknown> | undefined)?.lineNumberFallback ?? 0)}</span>
+                <span className="admin-meta-item__label">fallbackByLineNumber</span>
+                <span className="admin-meta-item__value">{mappingSummary.fallbackByLineNumber}</span>
               </div>
               <div className="admin-meta-item">
-                <span className="admin-meta-item__label">Aliases aún no resueltos</span>
-                <span className="admin-meta-item__value">{Number((latest.mappingSummary as Record<string, unknown> | undefined)?.unresolved ?? 0)}</span>
+                <span className="admin-meta-item__label">ambiguousAliases</span>
+                <span className="admin-meta-item__value">{mappingSummary.ambiguousAliases}</span>
               </div>
+              <div className="admin-meta-item">
+                <span className="admin-meta-item__label">unresolvedAliases</span>
+                <span className="admin-meta-item__value">{mappingSummary.unresolvedAliases}</span>
+              </div>
+              <div className="admin-meta-item">
+                <span className="admin-meta-item__label">Textos con mojibake reparado</span>
+                <span className="admin-meta-item__value">{mappingSummary.textQuality.textsRequiringMojibakeRepair}</span>
+              </div>
+              <div className="admin-meta-item">
+                <span className="admin-meta-item__label">Resueltos tras normalizar</span>
+                <span className="admin-meta-item__value">{mappingSummary.textQuality.aliasesResolvedAfterNormalization}</span>
+              </div>
+              <div className="admin-meta-item">
+                <span className="admin-meta-item__label">Resueltos por match directo</span>
+                <span className="admin-meta-item__value">{mappingSummary.textQuality.aliasesResolvedByDirectAlias}</span>
+              </div>
+            </div>
+            <div className="admin-section-divider" style={{ margin: "18px 0" }} />
+            <div className="admin-list">
+              {mappingSummary.domains.map((domain) => (
+                <div className="admin-list-row" key={domain.key}>
+                  <div className="admin-list-row__content">
+                    <span className="admin-list-row__title">{mappingDomainLabel(domain.key)}</span>
+                    <span className="admin-list-row__meta">
+                      Intentos: {domain.totalAttempts} · Reparados: {domain.repairedByNormalization} · Match directo: {domain.aliasesResolvedByDirectAlias} · Tras normalizar: {domain.aliasesResolvedAfterNormalization} · Fallback: {domain.fallbackByLineNumber}
+                    </span>
+                  </div>
+                  <Badge>{`Ambiguos ${domain.ambiguousAliases} · No resueltos ${domain.unresolvedAliases}`}</Badge>
+                </div>
+              ))}
             </div>
           </Card>
 
-          <Card title="Detalles de aliases no resueltos" subtitle="Muestra original, valor normalizado y candidato canónico si existe.">
-            {unresolvedAliasIssues.length > 0 ? (
+          <Card title="Reparaciones aplicadas" subtitle="Top repairs persistidos para trazabilidad operativa.">
+            {mappingSummary.topAliasRepairs.length > 0 ? (
               <div className="admin-list">
-                {unresolvedAliasIssues.slice(0, 8).map((issue, index) => {
-                  const details = typeof issue.details === "object" && issue.details !== null ? (issue.details as Record<string, unknown>) : {};
+                {mappingSummary.topAliasRepairs.map((repair, index) => {
                   return (
-                    <div className="admin-list-row" key={`${stringValue(issue.scope)}-${index}`}>
+                    <div className="admin-list-row" key={`${repair.domain}-${repair.canonicalId}-${index}`}>
                       <div className="admin-list-row__content">
-                        <span className="admin-list-row__title">{stringValue(issue.message, "Alias no resuelto")}</span>
+                        <span className="admin-list-row__title">{repair.canonicalName}</span>
                         <span className="admin-list-row__meta">
-                          Original: {stringValue(details.originalAccount, stringValue(details.originalRamo, "n/d"))} · Normalizado: {stringValue(details.normalizedAccount, stringValue(details.normalizedRamo, "n/d"))} · Candidato: {stringValue(details.candidateCanonical, "sin candidato")}
+                          Original: {repair.originalValue} · Reparado: {repair.repairedValue} · Normalizado: {repair.normalizedValue} · Dominio: {mappingDomainLabel(repair.domain)} · Veces: {repair.count}
                         </span>
                       </div>
-                      <Badge>{stringValue(details.ambiguity, "unresolved")}</Badge>
+                      <Badge>{mappingStrategyLabel(repair.strategy)}</Badge>
                     </div>
                   );
                 })}
               </div>
             ) : (
+              <div className="admin-alert--success">No fue necesario aplicar repairs persistidos en esta corrida.</div>
+            )}
+          </Card>
+        </div>
+
+        <div className="admin-grid-2" style={{ marginTop: 22 }}>
+          <Card title="Aliases resueltos" subtitle="Casos donde hubo evidencia adicional por normalización o fallback seguro.">
+            <div className="admin-meta-list" style={{ marginBottom: 18 }}>
+              <div className="admin-meta-item">
+                <span className="admin-meta-item__label">Directo</span>
+                <span className="admin-meta-item__value">{mappingSummary.textQuality.aliasesResolvedByDirectAlias}</span>
+              </div>
+              <div className="admin-meta-item">
+                <span className="admin-meta-item__label">Tras normalizar</span>
+                <span className="admin-meta-item__value">{mappingSummary.textQuality.aliasesResolvedAfterNormalization}</span>
+              </div>
+              <div className="admin-meta-item">
+                <span className="admin-meta-item__label">Fallback por línea</span>
+                <span className="admin-meta-item__value">{mappingSummary.textQuality.aliasesResolvedByLineNumberFallback}</span>
+              </div>
+            </div>
+            {mappingSummary.resolvedExamples.length > 0 ? (
+              <div className="admin-list">
+                {mappingSummary.resolvedExamples.map((example, index) => (
+                  <div className="admin-list-row" key={`${example.scope}-${index}`}>
+                    <div className="admin-list-row__content">
+                      <span className="admin-list-row__title">{example.originalValue}</span>
+                      <span className="admin-list-row__meta">{renderResolutionMeta(example)}</span>
+                    </div>
+                    <Badge>{mappingStrategyLabel(example.strategy)}</Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="admin-alert--success">No hubo alias que requirieran evidencia adicional para quedar resueltos.</div>
+            )}
+          </Card>
+
+          <Card title="Aliases ambiguos" subtitle="No se aceptan silenciosamente cuando más de un candidato es viable.">
+            {mappingSummary.ambiguousExamples.length > 0 ? (
+              <div className="admin-list">
+                {mappingSummary.ambiguousExamples.map((example, index) => (
+                  <div className="admin-list-row" key={`${example.scope}-${index}`}>
+                    <div className="admin-list-row__content">
+                      <span className="admin-list-row__title">{example.originalValue}</span>
+                      <span className="admin-list-row__meta">{renderResolutionMeta(example)}</span>
+                    </div>
+                    <Badge>{mappingStrategyLabel(example.strategy)}</Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="admin-alert--success">No se detectaron aliases ambiguos en esta corrida.</div>
+            )}
+          </Card>
+        </div>
+
+        <div className="admin-grid-2" style={{ marginTop: 22 }}>
+          <Card title="Aliases no resueltos" subtitle="Quedan abiertos con detalle técnico y sin inventar matches.">
+            {mappingSummary.unresolvedExamples.length > 0 ? (
+              <div className="admin-list">
+                {mappingSummary.unresolvedExamples.map((example, index) => (
+                  <div className="admin-list-row" key={`${example.scope}-${index}`}>
+                    <div className="admin-list-row__content">
+                      <span className="admin-list-row__title">{example.originalValue}</span>
+                      <span className="admin-list-row__meta">{renderResolutionMeta(example)}</span>
+                    </div>
+                    <Badge>{mappingStrategyLabel(example.strategy)}</Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
               <div className="admin-alert--success">No quedaron aliases sin resolver en esta corrida.</div>
             )}
+          </Card>
+
+          <Card title="Telemetría de calidad de texto" subtitle="Contadores operativos para mojibake, normalización y trazabilidad futura.">
+            <div className="admin-meta-list">
+              <div className="admin-meta-item">
+                <span className="admin-meta-item__label">Mojibake reparado</span>
+                <span className="admin-meta-item__value">{mappingSummary.textQuality.textsRequiringMojibakeRepair}</span>
+              </div>
+              <div className="admin-meta-item">
+                <span className="admin-meta-item__label">Resueltos tras normalizar</span>
+                <span className="admin-meta-item__value">{mappingSummary.textQuality.aliasesResolvedAfterNormalization}</span>
+              </div>
+              <div className="admin-meta-item">
+                <span className="admin-meta-item__label">Resueltos por alias directo</span>
+                <span className="admin-meta-item__value">{mappingSummary.textQuality.aliasesResolvedByDirectAlias}</span>
+              </div>
+              <div className="admin-meta-item">
+                <span className="admin-meta-item__label">Resueltos por fallback</span>
+                <span className="admin-meta-item__value">{mappingSummary.textQuality.aliasesResolvedByLineNumberFallback}</span>
+              </div>
+              <div className="admin-meta-item">
+                <span className="admin-meta-item__label">Ambiguos</span>
+                <span className="admin-meta-item__value">{mappingSummary.textQuality.ambiguousAliases}</span>
+              </div>
+              <div className="admin-meta-item">
+                <span className="admin-meta-item__label">No resueltos</span>
+                <span className="admin-meta-item__value">{mappingSummary.textQuality.unresolvedAliases}</span>
+              </div>
+            </div>
           </Card>
         </div>
 
