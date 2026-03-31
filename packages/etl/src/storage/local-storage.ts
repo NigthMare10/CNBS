@@ -4,6 +4,7 @@ import { basename, dirname, join, resolve } from "node:path";
 import { storagePaths } from "@cnbs/config";
 import type { AuditEvent, DatasetVersionRecord, SourceFileRecord } from "@cnbs/domain";
 import { datasetVersionRecordSchema } from "@cnbs/schemas";
+import type { z } from "zod";
 import type { CanonicalDatasetArtifacts, StagedIngestionRun, UploadedWorkbookInput } from "../types";
 import { sha256File } from "../security/hash";
 
@@ -52,6 +53,8 @@ interface RepositoryCacheStats {
   lastInvalidationReason: string | null;
   lastInvalidatedAt: string | null;
 }
+
+type ParsedDatasetVersionRecord = z.infer<typeof datasetVersionRecordSchema>;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -114,6 +117,134 @@ function normalizeActiveDatasetPointer(value: unknown, fallbackState: CacheNames
   return {
     datasetVersionId: datasetVersionId === undefined ? fallbackPointer.datasetVersionId : datasetVersionId,
     updatedAt: updatedAt === undefined ? fallbackPointer.updatedAt : updatedAt
+  };
+}
+
+function mapBusinessPeriod(
+  value: ParsedDatasetVersionRecord["businessPeriods"][keyof ParsedDatasetVersionRecord["businessPeriods"]]
+): DatasetVersionRecord["businessPeriods"][keyof DatasetVersionRecord["businessPeriods"]] {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  return {
+    reportDate: value.reportDate,
+    year: value.year,
+    month: value.month,
+    yearMonth: value.yearMonth,
+    excelSerial: value.excelSerial
+  };
+}
+
+function mapDomainAvailabilityEntry(
+  value: ParsedDatasetVersionRecord["domainAvailability"][keyof ParsedDatasetVersionRecord["domainAvailability"]]
+): DatasetVersionRecord["domainAvailability"][keyof DatasetVersionRecord["domainAvailability"]] {
+  return {
+    sourceProvided: value.sourceProvided,
+    records: value.records,
+    publishable: value.publishable,
+    missingReason: value.missingReason
+  };
+}
+
+function mapValidationSummary(value: ParsedDatasetVersionRecord["validationSummary"]): DatasetVersionRecord["validationSummary"] {
+  return {
+    publishability: value.publishability,
+    issues: value.issues.map((issue) => ({
+      code: issue.code,
+      severity: issue.severity,
+      status: issue.status,
+      scope: issue.scope,
+      message: issue.message,
+      ...(issue.details === undefined ? {} : { details: issue.details })
+    }))
+  };
+}
+
+function mapReconciliationSummary(
+  value: ParsedDatasetVersionRecord["reconciliationSummary"]
+): DatasetVersionRecord["reconciliationSummary"] {
+  return {
+    publishability: value.publishability,
+    issues: value.issues.map((issue) => ({
+      ruleId: issue.ruleId,
+      severity: issue.severity,
+      scope: issue.scope,
+      status: issue.status,
+      expectedValue: issue.expectedValue,
+      actualValue: issue.actualValue,
+      differenceAbsolute: issue.differenceAbsolute,
+      differenceRelative: issue.differenceRelative,
+      toleranceAbsolute: issue.toleranceAbsolute,
+      toleranceRelative: issue.toleranceRelative,
+      message: issue.message
+    }))
+  };
+}
+
+function mapMappingSummary(value: ParsedDatasetVersionRecord["mappingSummary"]): DatasetVersionRecord["mappingSummary"] {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  return {
+    repairedByNormalization: value.repairedByNormalization,
+    aliasesMatched: value.aliasesMatched,
+    lineNumberFallback: value.lineNumberFallback,
+    fallbackByLineNumber: value.fallbackByLineNumber,
+    unresolved: value.unresolved,
+    unresolvedAliases: value.unresolvedAliases,
+    ambiguousAliases: value.ambiguousAliases,
+    totalAttempts: value.totalAttempts,
+    textQuality: {
+      textsRequiringMojibakeRepair: value.textQuality.textsRequiringMojibakeRepair,
+      aliasesResolvedAfterNormalization: value.textQuality.aliasesResolvedAfterNormalization,
+      aliasesResolvedByDirectAlias: value.textQuality.aliasesResolvedByDirectAlias,
+      aliasesResolvedByLineNumberFallback: value.textQuality.aliasesResolvedByLineNumberFallback,
+      ambiguousAliases: value.textQuality.ambiguousAliases,
+      unresolvedAliases: value.textQuality.unresolvedAliases
+    },
+    domains: {
+      institution: { ...value.domains.institution },
+      insuranceLine: { ...value.domains.insuranceLine },
+      financialAccount: { ...value.domains.financialAccount }
+    },
+    topAliasRepairs: value.topAliasRepairs.map((item) => ({ ...item })),
+    resolvedExamples: value.resolvedExamples.map((item) => ({ ...item })),
+    ambiguousExamples: value.ambiguousExamples.map((item) => ({ ...item })),
+    unresolvedExamples: value.unresolvedExamples.map((item) => ({ ...item }))
+  };
+}
+
+function mapDatasetVersionRecord(value: ParsedDatasetVersionRecord): DatasetVersionRecord {
+  const mappingSummary = mapMappingSummary(value.mappingSummary);
+
+  return {
+    datasetVersionId: value.datasetVersionId,
+    ingestionRunId: value.ingestionRunId,
+    status: value.status,
+    createdAt: value.createdAt,
+    publishedAt: value.publishedAt,
+    uploadedBy: value.uploadedBy,
+    sourceFiles: value.sourceFiles.map((sourceFile): SourceFileRecord => ({ ...sourceFile })),
+    businessPeriods: {
+      premiums: mapBusinessPeriod(value.businessPeriods.premiums),
+      financialPosition: mapBusinessPeriod(value.businessPeriods.financialPosition),
+      incomeStatement: mapBusinessPeriod(value.businessPeriods.incomeStatement),
+      reference: mapBusinessPeriod(value.businessPeriods.reference)
+    },
+    datasetScope: value.datasetScope,
+    domainAvailability: {
+      premiums: mapDomainAvailabilityEntry(value.domainAvailability.premiums),
+      financialPosition: mapDomainAvailabilityEntry(value.domainAvailability.financialPosition),
+      claims: mapDomainAvailabilityEntry(value.domainAvailability.claims),
+      incomeStatement: mapDomainAvailabilityEntry(value.domainAvailability.incomeStatement),
+      reference: mapDomainAvailabilityEntry(value.domainAvailability.reference)
+    },
+    fingerprint: value.fingerprint,
+    validationSummary: mapValidationSummary(value.validationSummary),
+    reconciliationSummary: mapReconciliationSummary(value.reconciliationSummary),
+    ...(mappingSummary === undefined ? {} : { mappingSummary })
   };
 }
 
@@ -391,7 +522,7 @@ export class LocalStorageRepository {
       join(storagePaths.published, datasetVersionId, "metadata.json")
     );
 
-    const parsed = datasetVersionRecordSchema.parse(dataset) as DatasetVersionRecord;
+    const parsed = mapDatasetVersionRecord(datasetVersionRecordSchema.parse(dataset));
     this.datasetVersionCache.set(datasetVersionId, parsed);
     return parsed;
   }
