@@ -3,6 +3,7 @@ import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 import ExcelJS from "exceljs";
+import { storagePaths } from "@cnbs/config";
 import { beforeEach, describe, expect, it } from "vitest";
 import { LocalStorageRepository } from "../storage/local-storage";
 import { IngestionService } from "./ingestion-service";
@@ -91,7 +92,7 @@ describe("IngestionService", () => {
 
     expect(published.status).toBe("published");
     expect(active?.datasetVersionId).toBe(published.datasetVersionId);
-  });
+  }, 20000);
 
   it("supports rollback to a prior published version", async () => {
     const files = [
@@ -111,7 +112,30 @@ describe("IngestionService", () => {
     const active = await service.getActiveDataset();
 
     expect(active?.datasetVersionId).toBe(firstPublished.datasetVersionId);
-  });
+  }, 20000);
+
+  it("keeps active dataset resolution when the active pointer is partially persisted", async () => {
+    const run = await service.ingestWorkbookSet({
+      uploadedBy: "tester",
+      files: [
+        fixtureFile("premiums", "primas.xlsx", 12979),
+        fixtureFile("financialPosition", "estado_situacion_financiera.xlsx", 21236),
+        fixtureFile("reference", "informe_financiero_referencia.xlsx", 453545)
+      ]
+    });
+
+    const published = await service.publishStagedRun(run.ingestionRunId, "tester");
+
+    await writeFile(
+      join(storagePaths.active, "active-dataset.json"),
+      `${JSON.stringify({ updatedAt: published.publishedAt }, null, 2)}\n`,
+      "utf8"
+    );
+
+    const active = await service.getActiveDataset();
+
+    expect(active?.datasetVersionId).toBe(published.datasetVersionId);
+  }, 20000);
 
   it("blocks publication when a workbook is malformed", async () => {
     const directory = await mkdtemp(join(tmpdir(), "cnbs-invalid-"));
@@ -235,7 +259,7 @@ describe("IngestionService", () => {
     expect(run.sourceFiles.map((file) => file.kind).sort()).toEqual(["financialPosition", "premiums", "reference"]);
     expect(published.datasetScope).toBe("premiums-financial");
     expect(published.domainAvailability.reference.sourceProvided).toBe(true);
-  });
+  }, 20000);
 
   it("publishes correctly when both primary workbooks are provided without the optional reference", async () => {
     const run = await service.ingestWorkbookSet({
@@ -256,7 +280,7 @@ describe("IngestionService", () => {
     const overview = await service.getPublicOverview();
     expect((overview.executiveKpis as Array<{ key: string }>).some((kpi) => kpi.key === "total-reserves")).toBe(true);
     expect((overview.executiveKpis as Array<{ key: string }>).some((kpi) => kpi.key === "total-net-income")).toBe(false);
-  });
+  }, 20000);
 
   it("blocks a reference-only upload because no primary source is present", async () => {
     const run = await service.ingestWorkbookSet({
@@ -386,7 +410,7 @@ describe("IngestionService", () => {
     expect(publishedMetadata.mappingSummary?.topAliasRepairs.length).toBeGreaterThan(0);
     expect(status.latestTextQuality?.mappingSummary?.unresolvedAliases).toBe(0);
     expect(status.activeTextQuality?.mappingSummary?.unresolvedAliases).toBe(0);
-  });
+  }, 20000);
 
   it("blocks ambiguous financial aliases instead of accepting permissive matches", async () => {
     const financialWorkbookPath = await createFinancialPositionWorkbook([

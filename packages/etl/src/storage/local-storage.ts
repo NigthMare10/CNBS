@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { basename, dirname, join, resolve } from "node:path";
 import { storagePaths } from "@cnbs/config";
 import type { AuditEvent, DatasetVersionRecord, SourceFileRecord } from "@cnbs/domain";
-import { activeDatasetPointerSchema, datasetVersionRecordSchema } from "@cnbs/schemas";
+import { datasetVersionRecordSchema } from "@cnbs/schemas";
 import type { CanonicalDatasetArtifacts, StagedIngestionRun, UploadedWorkbookInput } from "../types";
 import { sha256File } from "../security/hash";
 
@@ -29,6 +29,11 @@ function sanitizeOriginalFilename(input: string): string {
   return basename(input).replace(/[^a-zA-Z0-9._-]/g, "_");
 }
 
+interface ActiveDatasetPointer {
+  datasetVersionId: string | null;
+  updatedAt: string | null;
+}
+
 interface CacheNamespaceState {
   namespace: string;
   activeDatasetVersionId: string | null;
@@ -48,8 +53,72 @@ interface RepositoryCacheStats {
   lastInvalidatedAt: string | null;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function readOptionalNullableString(record: Record<string, unknown>, key: string): string | null | undefined {
+  const value = record[key];
+
+  if (value === undefined) {
+    return undefined;
+  }
+
+  if (value === null) {
+    return null;
+  }
+
+  if (typeof value === "string" && value.trim().length > 0) {
+    return value;
+  }
+
+  return undefined;
+}
+
+function createBootstrapCacheNamespaceState(): CacheNamespaceState {
+  return {
+    namespace: "bootstrap",
+    activeDatasetVersionId: null,
+    updatedAt: null
+  };
+}
+
+function normalizeCacheNamespaceState(value: unknown): CacheNamespaceState {
+  if (!isRecord(value)) {
+    return createBootstrapCacheNamespaceState();
+  }
+
+  const activeDatasetVersionId = readOptionalNullableString(value, "activeDatasetVersionId");
+  const updatedAt = readOptionalNullableString(value, "updatedAt");
+
+  return {
+    namespace: typeof value.namespace === "string" && value.namespace.trim().length > 0 ? value.namespace : "bootstrap",
+    activeDatasetVersionId: activeDatasetVersionId === undefined ? null : activeDatasetVersionId,
+    updatedAt: updatedAt === undefined ? null : updatedAt
+  };
+}
+
+function normalizeActiveDatasetPointer(value: unknown, fallbackState: CacheNamespaceState | null): ActiveDatasetPointer {
+  const fallbackPointer: ActiveDatasetPointer = {
+    datasetVersionId: fallbackState?.activeDatasetVersionId ?? null,
+    updatedAt: fallbackState?.updatedAt ?? null
+  };
+
+  if (!isRecord(value)) {
+    return fallbackPointer;
+  }
+
+  const datasetVersionId = readOptionalNullableString(value, "datasetVersionId");
+  const updatedAt = readOptionalNullableString(value, "updatedAt");
+
+  return {
+    datasetVersionId: datasetVersionId === undefined ? fallbackPointer.datasetVersionId : datasetVersionId,
+    updatedAt: updatedAt === undefined ? fallbackPointer.updatedAt : updatedAt
+  };
+}
+
 export class LocalStorageRepository {
-  private activePointerCache: { datasetVersionId: string | null; updatedAt: string | null } | null = null;
+  private activePointerCache: ActiveDatasetPointer | null = null;
   private datasetVersionCache = new Map<string, DatasetVersionRecord>();
   private artifactCache = new Map<string, unknown>();
   private stagingRunCache = new Map<string, StagedIngestionRun>();
@@ -78,11 +147,7 @@ export class LocalStorageRepository {
 
   private async ensureCacheStateFile(): Promise<void> {
     if (!(await this.fileExists(this.cacheStatePath()))) {
-      const initialState: CacheNamespaceState = {
-        namespace: "bootstrap",
-        activeDatasetVersionId: null,
-        updatedAt: null
-      };
+      const initialState = createBootstrapCacheNamespaceState();
       await writeJson(this.cacheStatePath(), initialState);
       this.namespaceState = initialState;
     }
@@ -104,7 +169,9 @@ export class LocalStorageRepository {
 
   private async readCacheNamespaceState(): Promise<CacheNamespaceState> {
     await this.ensureCacheStateFile();
-    return await readJson<CacheNamespaceState>(this.cacheStatePath());
+
+    const state = await readJson<unknown>(this.cacheStatePath());
+    return normalizeCacheNamespaceState(state);
   }
 
   private async syncCacheNamespace(force = false): Promise<void> {
@@ -269,7 +336,7 @@ export class LocalStorageRepository {
     await this.writeCacheNamespaceState(datasetVersionId);
   }
 
-  async getActiveDatasetPointer(): Promise<{ datasetVersionId: string | null; updatedAt: string | null }> {
+  async getActiveDatasetPointer(): Promise<ActiveDatasetPointer> {
     await this.syncCacheNamespace();
 
     if (this.activePointerCache) {
@@ -279,11 +346,17 @@ export class LocalStorageRepository {
 
     this.cacheStats.pointerMisses += 1;
 
-    const pointer = await readJson<{ datasetVersionId: string | null; updatedAt: string | null }>(
-      join(storagePaths.active, "active-dataset.json")
-    );
+    let pointer: unknown = null;
 
-    this.activePointerCache = activeDatasetPointerSchema.parse(pointer);
+    try {
+      pointer = await readJson<unknown>(join(storagePaths.active, "active-dataset.json"));
+    } catch (error) {
+      if (!isFileNotFound(error)) {
+        throw error;
+      }
+    }
+
+    this.activePointerCache = normalizeActiveDatasetPointer(pointer, this.namespaceState);
     return this.activePointerCache;
   }
 
@@ -387,21 +460,13 @@ export class LocalStorageRepository {
 
   async clearStorage(): Promise<void> {
     await rm(storagePaths.root, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
-    this.invalidateProcessCaches("storage-cleared", {
-      namespace: "bootstrap",
-      activeDatasetVersionId: null,
-      updatedAt: null
-    });
+    this.invalidateProcessCaches("storage-cleared", createBootstrapCacheNamespaceState());
     await this.initialize();
     await writeJson(join(storagePaths.active, "active-dataset.json"), {
       datasetVersionId: null,
       updatedAt: null
     });
-    await writeJson(this.cacheStatePath(), {
-      namespace: "bootstrap",
-      activeDatasetVersionId: null,
-      updatedAt: null
-    } satisfies CacheNamespaceState);
+    await writeJson(this.cacheStatePath(), createBootstrapCacheNamespaceState());
   }
 
   async getOperationalMetrics() {

@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>CNBS Manual de Usuario</title>
+  <style>
+    @page { size: A4; margin: 2.1cm 1.8cm 2.1cm 1.8cm; }
+    body {
+      font-family: Calibri, Arial, sans-serif;
+      color: #162234;
+      font-size: 11pt;
+      line-height: 1.45;
+      margin: 0;
+    }
+    h1, h2, h3 {
+      color: #0f2f4a;
+      margin: 0 0 10pt;
+    }
+    h1 { font-size: 18pt; border-bottom: 2px solid #0f766e; padding-bottom: 4pt; margin-top: 18pt; }
+    h2 { font-size: 14pt; margin-top: 14pt; }
+    h3 { font-size: 12pt; margin-top: 12pt; }
+    p, li { margin: 0 0 7pt; }
+    ul, ol { margin: 0 0 10pt 18pt; padding: 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10pt 0 14pt;
+      font-size: 10pt;
+    }
+    caption {
+      caption-side: top;
+      text-align: left;
+      font-weight: 700;
+      color: #0f2f4a;
+      margin-bottom: 4pt;
+    }
+    th, td {
+      border: 1px solid #b8c8d6;
+      padding: 6pt 7pt;
+      vertical-align: top;
+    }
+    th {
+      background: #113a5c;
+      color: #ffffff;
+      font-weight: 700;
+    }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 9.5pt;
+      background: #edf4f7;
+      padding: 1pt 3pt;
+      border-radius: 3pt;
+    }
+    .page-break { page-break-before: always; }
+    .cover-page {
+      min-height: 24cm;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+      border: 1px solid #c7d3dc;
+      padding: 1.5cm;
+      background: linear-gradient(180deg, #f5fbfb 0%, #ffffff 100%);
+    }
+    .cover-rule {
+      width: 30%;
+      margin: 0 auto 18pt;
+      border-top: 5px solid #0f766e;
+    }
+    .cover-kicker {
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #0f766e;
+      font-weight: 700;
+      margin-bottom: 12pt;
+    }
+    .cover-title {
+      font-size: 24pt;
+      border: none;
+      margin: 0 0 12pt;
+      padding: 0;
+    }
+    .cover-subtitle {
+      font-size: 12pt;
+      color: #475569;
+      margin: 0 auto 18pt;
+      max-width: 80%;
+    }
+    .cover-meta {
+      width: 70%;
+      margin: 0 auto 16pt;
+      font-size: 10.5pt;
+    }
+    .cover-meta th {
+      width: 38%;
+      text-align: left;
+      background: #e7f4f1;
+      color: #0f2f4a;
+    }
+    .cover-note {
+      color: #475569;
+      font-size: 10.5pt;
+    }
+    .toc-box {
+      border: 1px solid #c7d3dc;
+      background: #fbfdfe;
+      padding: 12pt 14pt;
+    }
+    .toc-box a {
+      color: #0f2f4a;
+      text-decoration: none;
+    }
+    .callout {
+      border-left: 5px solid #0f766e;
+      background: #f4fbf9;
+      padding: 9pt 11pt;
+      margin: 10pt 0 12pt;
+    }
+    .callout.warning { border-left-color: #b45309; background: #fff7ed; }
+    .callout.risk { border-left-color: #b91c1c; background: #fef2f2; }
+    .diagram-card {
+      border: 1px solid #b8c8d6;
+      background: #fbfdfe;
+      padding: 10pt;
+      margin: 10pt 0 14pt;
+    }
+    .diagram-title {
+      font-weight: 700;
+      color: #0f2f4a;
+      margin-bottom: 8pt;
+    }
+    .diagram-table { margin: 0; }
+    .diagram-box {
+      border: 2px solid #0f766e;
+      background: #e7f8f4;
+      text-align: center;
+      font-weight: 700;
+      padding: 10pt 8pt;
+    }
+    .diagram-box.dark { background: #dbeafe; border-color: #1d4ed8; }
+    .diagram-box.warn { background: #fef3c7; border-color: #b45309; }
+    .diagram-box.risk { background: #fee2e2; border-color: #b91c1c; }
+    .diagram-arrow {
+      border: none;
+      width: 6%;
+      text-align: center;
+      font-size: 16pt;
+      color: #0f766e;
+      font-weight: 700;
+    }
+    .small { font-size: 9.5pt; color: #475569; }
+    .muted { color: #475569; }
+    .two-column {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14pt;
+    }
+  </style>
+</head>
+<body>
+
+    <section class="cover-page">
+      <div class="cover-rule"></div>
+      <p class="cover-kicker">CNBS Dashboard</p>
+      <h1 class="cover-title">Manual de Usuario</h1>
+      <p class="cover-subtitle">Guía operativa de la primera versión del sistema para usuarios administrativos, personal de supervisión y revisión institucional.</p>
+      <table class="cover-meta">
+        <tbody>
+          <tr><th>Versión del documento</th><td>1.0</td></tr>
+          <tr><th>Fecha</th><td>23 de marzo de 2026</td></tr>
+          <tr><th>Responsable</th><td>Equipo del proyecto (manual elaborado sobre el sistema auditado)</td></tr>
+          <tr><th>Estado</th><td>Candidato para entrega y capacitación inicial</td></tr>
+        </tbody>
+      </table>
+      <p class="cover-note">El manual describe las funciones efectivamente disponibles en el sistema actual y sus limitaciones reales.</p>
+    </section>
+  <div class="page-break"></div>
+    <section>
+      <h1>Índice estructurado</h1>
+      <div class="toc-box">
+        <ol>
+          <li><a href="#manual-objetivo">1. Objetivo del manual</a></li><li><a href="#manual-perfiles">2. Perfil de usuario</a></li><li><a href="#manual-plataforma">3. Descripción general de la plataforma</a></li><li><a href="#manual-requisitos">4. Requisitos para usarla</a></li><li><a href="#manual-acceso">5. Acceso al sistema</a></li><li><a href="#manual-modulos">6. Explicación de los módulos</a></li><li><a href="#manual-flujo">7. Flujo paso a paso de operación</a></li><li><a href="#manual-estados">8. Explicación de mensajes y estados</a></li><li><a href="#manual-tarjetas">9. Qué significa cada tarjeta, cuadro o sección visible</a></li><li><a href="#manual-errores">10. Errores comunes y cómo resolverlos</a></li><li><a href="#manual-buenas-practicas">11. Buenas prácticas de operación</a></li><li><a href="#manual-faq">12. Preguntas frecuentes</a></li><li><a href="#manual-glosario">13. Glosario sencillo</a></li><li><a href="#manual-anexos-visuales">14. Anexos visuales</a></li>
+        </ol>
+      </div>
+    </section>
+  <section id="manual-objetivo"><h1>1. Objetivo del manual</h1><p>Este manual explica cómo operar la plataforma CNBS Dashboard en su primera versión, con un lenguaje orientado a usuarios administrativos, personal de supervisión, personal de validación y usuarios institucionales no técnicos.</p><p>El manual describe exclusivamente lo que el sistema hace hoy. Cuando una capacidad no existe o no forma parte del alcance actual, se explica como limitación o estado no disponible.</p></section><section id="manual-perfiles"><h1>2. Perfil de usuario</h1>
+    <table>
+      <caption>Perfiles visibles en la solución actual</caption>
+      <thead>
+        <tr><th>Perfil</th><th>Uso esperado</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Administrador</td><td>Opera carga, publicación, rollback, historial y auditoría.</td></tr><tr><td>Cargador</td><td>Sube workbooks y revisa el estado de la corrida.</td></tr><tr><td>Validador</td><td>Revisa resultados de validación y reconciliación.</td></tr><tr><td>Publicador</td><td>Activa una corrida publicable y ejecuta rollback si corresponde.</td></tr><tr><td>Auditor</td><td>Consulta bitácora operativa y trazabilidad.</td></tr><tr><td>Usuario público</td><td>Consulta el portal institucional sin acceso a funciones privadas.</td></tr>
+      </tbody>
+    </table>
+  </section><section id="manual-plataforma"><h1>3. Descripción general de la plataforma</h1><p>La plataforma tiene dos superficies principales:</p><ul><li>Módulo administrativo: permite iniciar sesión, cargar workbooks, revisar corridas, publicar versiones y ejecutar rollback.</li><li>Portal público: muestra indicadores, rankings, versión activa y ficha institucional de forma honesta y controlada.</li></ul><p>La información pública se sirve desde datasets publicados. El sitio no abre Excel en tiempo de consulta.</p><div class="callout warning"><strong>Regla principal</strong><div>La primera versión pública solo usa dos fuentes operativas: primas y estado de situación financiera. Si un dato requiere otra fuente, el sistema lo mostrará como no disponible.</div></div></section><section id="manual-requisitos"><h1>4. Requisitos para usarla</h1><ul><li>Acceso a la red y a los servicios locales o institucionales donde corra el sistema.</li><li>Credenciales válidas para el módulo admin, ya sea en modo local u OIDC.</li><li>Archivos Excel <code>.xlsx</code> válidos del dominio de primas, balance o referencia opcional.</li><li>Permisos acordes al rol del usuario para cargar, publicar, revertir o auditar.</li></ul></section><section id="manual-acceso"><h1>5. Acceso al sistema</h1><ol><li>Abra el módulo administrativo en <code>http://localhost:3001/</code> o en la URL institucional configurada.</li><li>Si el entorno usa modo local, ingrese usuario y contraseña.</li><li>Si el entorno usa SSO, seleccione el ingreso con OIDC y complete la autenticación corporativa.</li><li>Una vez autenticado, el sistema lo dirigirá a la pantalla de carga.</li></ol><p>El portal público se consulta por separado en <code>http://localhost:3000/</code> o en la URL pública definida para la institución.</p></section><section id="manual-modulos"><h1>6. Explicación de los módulos</h1>
+    <table>
+      <caption>Mapa funcional de la solución</caption>
+      <thead>
+        <tr><th>Módulo</th><th>Qué permite hacer</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Inicio</td><td>Autenticarse y acceder al panel operativo.</td></tr><tr><td>Ingestas</td><td>Consultar corridas cargadas, su estado, sus archivos y el resultado esperado de publicación.</td></tr><tr><td>Carga</td><td>Subir uno o varios workbooks Excel y enviar la corrida a staging.</td></tr><tr><td>Reconciliación</td><td>Revisar severidades, matching, alias, advertencias y JSON técnico de la corrida.</td></tr><tr><td>Publicar</td><td>Activar corridas que estén permitidas para publicación.</td></tr><tr><td>Publicaciones</td><td>Consultar versiones publicadas y revertir a una versión anterior.</td></tr><tr><td>Historial</td><td>Ver versiones históricas y ejecutar rollback inmediato.</td></tr><tr><td>Auditoría</td><td>Consultar eventos operativos y trazabilidad básica.</td></tr><tr><td>Portal público</td><td>Visualizar indicadores, rankings, cobertura por dominio y fichas institucionales.</td></tr>
+      </tbody>
+    </table>
+  
+    <div class="diagram-card">
+      <div class="diagram-title">Diagrama de interacción del usuario administrador</div>
+      <table class="diagram-table"><tbody><tr><td class="diagram-box default" colspan="1">Ingreso</td><td class="diagram-arrow">→</td><td class="diagram-box dark" colspan="1">Carga</td><td class="diagram-arrow">→</td><td class="diagram-box default" colspan="1">Revisión</td><td class="diagram-arrow">→</td><td class="diagram-box warn" colspan="1">Publicación</td><td class="diagram-arrow">→</td><td class="diagram-box dark" colspan="1">Historial / Auditoría</td></tr></tbody></table>
+    </div>
+  </section><section id="manual-flujo"><h1>7. Flujo paso a paso de operación</h1><h2>7.1 Iniciar sesión</h2><ol><li>Ingrese al panel administrativo.</li><li>Autentíquese por modo local u OIDC.</li><li>Verifique que el menú superior muestre los módulos administrativos.</li></ol><h2>7.2 Cargar archivos</h2><ol><li>Abra la pantalla <strong>Carga</strong>.</li><li>Seleccione uno o varios archivos <code>.xlsx</code>.</li><li>Haga clic en <strong>Iniciar ingesta</strong>.</li><li>Espere a que el sistema clasifique, valide y deje la corrida en staging.</li></ol><h2>7.3 Revisar una corrida</h2><ol><li>Después de cargar, el sistema lo redirige a <strong>Reconciliación</strong>.</li><li>Revise la etiqueta operativa, el resumen de severidades y el diagnóstico de matching.</li><li>Si necesita una vista más resumida de corridas, consulte <strong>Ingestas</strong>.</li></ol><h2>7.4 Interpretar validaciones</h2><ul><li><strong>publishable</strong>: la corrida puede avanzar a publicación.</li><li><strong>warningOnly</strong>: la corrida puede publicarse, pero con advertencias que deben entenderse.</li><li><strong>blocked</strong>: la corrida no puede publicarse mientras existan issues críticos o altos.</li></ul><h2>7.5 Interpretar reconciliación</h2><ul><li>Revise reparaciones de texto y aliases resueltos.</li><li>Si aparecen aliases ambiguos o no resueltos, la corrida requiere intervención antes de publicar.</li><li>El JSON completo sirve como respaldo técnico para soporte y análisis detallado.</li></ul><h2>7.6 Publicar</h2><ol><li>Abra la pantalla <strong>Publicar</strong>.</li><li>Identifique la corrida deseada.</li><li>Si la corrida está bloqueada, el botón aparecerá deshabilitado o reemplazado por el mensaje correspondiente.</li><li>Si está permitida, seleccione <strong>Publicar corrida</strong>.</li><li>El sistema generará una versión inmutable y actualizará la versión activa.</li></ol><h2>7.7 Verificar la versión activa</h2><ol><li>Consulte <strong>Publicaciones</strong> o <strong>Historial</strong> en el panel admin.</li><li>Verifique qué versión aparece marcada como activa.</li><li>Abra luego el portal público en <strong>Versión</strong> para confirmar la metadata visible al usuario final.</li></ol><h2>7.8 Verificar datos públicos</h2><ol><li>Abra el portal público.</li><li>Revise <strong>Inicio</strong>, <strong>Rankings</strong>, <strong>Versión</strong> y una ficha institucional.</li><li>Confirme que los bloques no soportados se muestren como no disponibles en lugar de valores inventados.</li></ol><h2>7.9 Revertir a una versión anterior</h2><ol><li>Abra <strong>Publicaciones</strong> o <strong>Historial</strong>.</li><li>Identifique la versión a la que desea volver.</li><li>Seleccione <strong>Revertir a esta versión</strong>.</li><li>Confirme luego en el portal público que la versión activa haya cambiado.</li></ol></section><section id="manual-estados"><h1>8. Explicación de mensajes y estados</h1>
+    <table>
+      <caption>Estados más importantes visibles para el usuario</caption>
+      <thead>
+        <tr><th>Estado o mensaje</th><th>Significado operativo</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>publishable</code></td><td>La corrida puede publicarse.</td></tr><tr><td><code>warningOnly</code></td><td>La corrida puede publicarse, pero existen advertencias que deben entenderse.</td></tr><tr><td><code>blocked</code></td><td>La corrida no puede publicarse.</td></tr><tr><td><code>staged</code></td><td>La corrida está en staging y pendiente de revisión o publicación.</td></tr><tr><td>Publicada</td><td>La corrida ya generó una versión publicada.</td></tr><tr><td>Activa</td><td>La versión está siendo servida actualmente al sitio público.</td></tr><tr><td>Dato no disponible</td><td>El sistema no puede derivar ese dato con integridad a partir de las fuentes operativas actuales.</td></tr>
+      </tbody>
+    </table>
+  </section><section id="manual-tarjetas"><h1>9. Qué significa cada tarjeta, cuadro o sección visible</h1><h2>9.1 Portal público</h2>
+    <table>
+      <caption>Elementos visibles del portal público</caption>
+      <thead>
+        <tr><th>Sección</th><th>Interpretación</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Estado de la versión</td><td>Muestra la versión activa, el período y el alcance publicado.</td></tr><tr><td>KPIs ejecutivos</td><td>Resume magnitudes soportadas por las fuentes operativas disponibles.</td></tr><tr><td>Gráficos de primas</td><td>Muestran distribución por ramo o institución cuando existe fuente de primas.</td></tr><tr><td>Gráficos de balance</td><td>Muestran activos y reservas cuando existe balance publicado.</td></tr><tr><td>Cobertura por dominio</td><td>Aclara qué dominios están disponibles y cuáles no.</td></tr><tr><td>Ficha institucional</td><td>Muestra un resumen puntual por aseguradora sin inventar bloques no soportados.</td></tr>
+      </tbody>
+    </table>
+  <h2>9.2 Módulo administrativo</h2>
+    <table>
+      <caption>Elementos visibles del módulo admin</caption>
+      <thead>
+        <tr><th>Sección</th><th>Interpretación</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Archivos detectados</td><td>Indica qué tipo de workbook reconoció el sistema en la última corrida.</td></tr><tr><td>Derivados esperados</td><td>Resume qué artefactos públicos podrán generarse con la corrida.</td></tr><tr><td>Diagnóstico de matching</td><td>Muestra cómo se resolvieron aliases, reparaciones de texto y posibles ambigüedades.</td></tr><tr><td>Reparaciones aplicadas</td><td>Resume normalizaciones y correcciones relevantes de texto o alias.</td></tr><tr><td>Versiones publicadas</td><td>Lista datasets ya materializados y marca cuál está activa.</td></tr><tr><td>Auditoría</td><td>Muestra eventos operativos y trazabilidad general.</td></tr>
+      </tbody>
+    </table>
+  </section><section id="manual-errores"><h1>10. Errores comunes y cómo resolverlos</h1>
+    <table>
+      <caption>Resolución básica de incidencias</caption>
+      <thead>
+        <tr><th>Situación</th><th>Qué significa</th><th>Acción sugerida</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Credenciales inválidas</td><td>El usuario o contraseña no coinciden con el entorno configurado.</td><td>Verifique credenciales o confirme si el entorno usa OIDC.</td></tr><tr><td>No se detectaron archivos válidos</td><td>La carga no contenía archivos útiles o el navegador envió placeholders vacíos.</td><td>Repita la carga seleccionando los <code>.xlsx</code> reales.</td></tr><tr><td>Corrida bloqueada</td><td>Existen issues críticos o altos en validación o reconciliación.</td><td>Revise la pantalla de Reconciliación y corrija el origen del problema.</td></tr><tr><td>Dato no disponible en web</td><td>El dataset activo no incluye el dominio requerido para ese bloque.</td><td>Revise cobertura y fuentes publicadas en la pantalla Versión.</td></tr><tr><td>Versión no encontrada</td><td>La versión o corrida solicitada ya no está disponible en el storage actual.</td><td>Verifique que la versión exista y consulte Publicaciones o Ingestas.</td></tr><tr><td>Solicitud rechazada por origen no confiable</td><td>El sistema bloqueó la operación por seguridad.</td><td>Intente de nuevo desde el panel y la misma sesión del navegador.</td></tr>
+      </tbody>
+    </table>
+  </section><section id="manual-buenas-practicas"><h1>11. Buenas prácticas de operación</h1><ul><li>Cargue únicamente workbooks <code>.xlsx</code> provenientes de la fuente institucional esperada.</li><li>Revise la etiqueta operativa, la publishability y la reconciliación antes de publicar.</li><li>No interprete un bloque ausente como cero; valide siempre la cobertura por dominio.</li><li>Conserve la lógica actual: el informe preliminar es referencia, no fuente pública.</li><li>Verifique la versión activa después de publicar y después de cualquier rollback.</li><li>Use Auditoría e Historial para reconstruir la secuencia operativa de una versión.</li></ul></section><section id="manual-faq"><h1>12. Preguntas frecuentes</h1><h2>12.1 ¿Puedo publicar solo el informe preliminar?</h2><p>No. El informe preliminar no es fuente operativa y nunca se publica por sí solo.</p><h2>12.2 ¿Por qué algunos gráficos muestran “Dato no disponible”?</h2><p>Porque la fuente requerida no está presente o no permite derivación íntegra en esta versión. El sistema evita inventar datos.</p><h2>12.3 ¿Qué pasa si publico una corrida con advertencias?</h2><p>La versión se publica, pero queda registro de las advertencias. Deben revisarse según el contexto operativo.</p><h2>12.4 ¿Qué hace el rollback?</h2><p>Cambia la versión activa a una publicación anterior. No elimina datasets ni corridas históricas.</p><h2>12.5 ¿El estado de resultados ya alimenta el portal público?</h2><p>No. Puede detectarse y trazarse, pero no forma parte de la política operativa pública actual.</p></section><section id="manual-glosario"><h1>13. Glosario sencillo</h1>
+    <table>
+      <caption>Glosario para usuarios no técnicos</caption>
+      <thead>
+        <tr><th>Término</th><th>Explicación</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Corrida</td><td>Conjunto de archivos cargados y procesados como una sola unidad.</td></tr><tr><td>Staging</td><td>Etapa en la que la corrida queda lista para revisión antes de publicarse.</td></tr><tr><td>Versión activa</td><td>Dataset publicado que ve actualmente el usuario público.</td></tr><tr><td>Rollback</td><td>Volver a una versión activa anterior.</td></tr><tr><td>Fuente operativa</td><td>Archivo que sí alimenta el runtime público.</td></tr><tr><td>Dato no disponible</td><td>Respuesta honesta del sistema cuando una métrica no puede derivarse con seguridad.</td></tr>
+      </tbody>
+    </table>
+  </section><section id="manual-anexos-visuales"><h1>14. Anexos visuales</h1>
+    <div class="diagram-card">
+      <div class="diagram-title">Interacción del usuario público</div>
+      <table class="diagram-table"><tbody><tr><td class="diagram-box default" colspan="1">Inicio</td><td class="diagram-arrow">→</td><td class="diagram-box dark" colspan="1">Rankings</td><td class="diagram-arrow">→</td><td class="diagram-box warn" colspan="1">Versión</td><td class="diagram-arrow">→</td><td class="diagram-box default" colspan="1">Ficha institucional</td></tr></tbody></table>
+    </div>
+  
+    <div class="diagram-card">
+      <div class="diagram-title">Resumen del ciclo administrativo</div>
+      <table class="diagram-table"><tbody><tr><td class="diagram-box default" colspan="1">Cargar archivos</td><td class="diagram-arrow">→</td><td class="diagram-box dark" colspan="1">Revisar corrida</td><td class="diagram-arrow">→</td><td class="diagram-box warn" colspan="1">Publicar</td><td class="diagram-arrow">→</td><td class="diagram-box dark" colspan="1">Verificar versión activa</td><td class="diagram-arrow">→</td><td class="diagram-box risk" colspan="1">Revertir si es necesario</td></tr></tbody></table>
+    </div>
+  <div class="callout note"><strong>Nota sobre apoyos visuales</strong><div>Los anexos visuales de este manual usan diagramas esquemáticos construidos a partir de la arquitectura y las pantallas reales del sistema. No se incrustaron capturas congeladas porque el repositorio auditado no incluye un set oficial de capturas institucionales.</div></div></section>
+</body>
+</html>

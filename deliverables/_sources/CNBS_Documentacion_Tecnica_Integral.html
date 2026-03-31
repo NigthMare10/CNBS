@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>CNBS Documentación Técnica Integral</title>
+  <style>
+    @page { size: A4; margin: 2.1cm 1.8cm 2.1cm 1.8cm; }
+    body {
+      font-family: Calibri, Arial, sans-serif;
+      color: #162234;
+      font-size: 11pt;
+      line-height: 1.45;
+      margin: 0;
+    }
+    h1, h2, h3 {
+      color: #0f2f4a;
+      margin: 0 0 10pt;
+    }
+    h1 { font-size: 18pt; border-bottom: 2px solid #0f766e; padding-bottom: 4pt; margin-top: 18pt; }
+    h2 { font-size: 14pt; margin-top: 14pt; }
+    h3 { font-size: 12pt; margin-top: 12pt; }
+    p, li { margin: 0 0 7pt; }
+    ul, ol { margin: 0 0 10pt 18pt; padding: 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10pt 0 14pt;
+      font-size: 10pt;
+    }
+    caption {
+      caption-side: top;
+      text-align: left;
+      font-weight: 700;
+      color: #0f2f4a;
+      margin-bottom: 4pt;
+    }
+    th, td {
+      border: 1px solid #b8c8d6;
+      padding: 6pt 7pt;
+      vertical-align: top;
+    }
+    th {
+      background: #113a5c;
+      color: #ffffff;
+      font-weight: 700;
+    }
+    code {
+      font-family: Consolas, "Courier New", monospace;
+      font-size: 9.5pt;
+      background: #edf4f7;
+      padding: 1pt 3pt;
+      border-radius: 3pt;
+    }
+    .page-break { page-break-before: always; }
+    .cover-page {
+      min-height: 24cm;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      text-align: center;
+      border: 1px solid #c7d3dc;
+      padding: 1.5cm;
+      background: linear-gradient(180deg, #f5fbfb 0%, #ffffff 100%);
+    }
+    .cover-rule {
+      width: 30%;
+      margin: 0 auto 18pt;
+      border-top: 5px solid #0f766e;
+    }
+    .cover-kicker {
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: #0f766e;
+      font-weight: 700;
+      margin-bottom: 12pt;
+    }
+    .cover-title {
+      font-size: 24pt;
+      border: none;
+      margin: 0 0 12pt;
+      padding: 0;
+    }
+    .cover-subtitle {
+      font-size: 12pt;
+      color: #475569;
+      margin: 0 auto 18pt;
+      max-width: 80%;
+    }
+    .cover-meta {
+      width: 70%;
+      margin: 0 auto 16pt;
+      font-size: 10.5pt;
+    }
+    .cover-meta th {
+      width: 38%;
+      text-align: left;
+      background: #e7f4f1;
+      color: #0f2f4a;
+    }
+    .cover-note {
+      color: #475569;
+      font-size: 10.5pt;
+    }
+    .toc-box {
+      border: 1px solid #c7d3dc;
+      background: #fbfdfe;
+      padding: 12pt 14pt;
+    }
+    .toc-box a {
+      color: #0f2f4a;
+      text-decoration: none;
+    }
+    .callout {
+      border-left: 5px solid #0f766e;
+      background: #f4fbf9;
+      padding: 9pt 11pt;
+      margin: 10pt 0 12pt;
+    }
+    .callout.warning { border-left-color: #b45309; background: #fff7ed; }
+    .callout.risk { border-left-color: #b91c1c; background: #fef2f2; }
+    .diagram-card {
+      border: 1px solid #b8c8d6;
+      background: #fbfdfe;
+      padding: 10pt;
+      margin: 10pt 0 14pt;
+    }
+    .diagram-title {
+      font-weight: 700;
+      color: #0f2f4a;
+      margin-bottom: 8pt;
+    }
+    .diagram-table { margin: 0; }
+    .diagram-box {
+      border: 2px solid #0f766e;
+      background: #e7f8f4;
+      text-align: center;
+      font-weight: 700;
+      padding: 10pt 8pt;
+    }
+    .diagram-box.dark { background: #dbeafe; border-color: #1d4ed8; }
+    .diagram-box.warn { background: #fef3c7; border-color: #b45309; }
+    .diagram-box.risk { background: #fee2e2; border-color: #b91c1c; }
+    .diagram-arrow {
+      border: none;
+      width: 6%;
+      text-align: center;
+      font-size: 16pt;
+      color: #0f766e;
+      font-weight: 700;
+    }
+    .small { font-size: 9.5pt; color: #475569; }
+    .muted { color: #475569; }
+    .two-column {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14pt;
+    }
+  </style>
+</head>
+<body>
+
+    <section class="cover-page">
+      <div class="cover-rule"></div>
+      <p class="cover-kicker">CNBS Dashboard</p>
+      <h1 class="cover-title">Documentación Técnica Integral</h1>
+      <p class="cover-subtitle">Documento consolidado del estado real del repositorio, la arquitectura, la operación y las capacidades actuales de la plataforma.</p>
+      <table class="cover-meta">
+        <tbody>
+          <tr><th>Versión del documento</th><td>1.0</td></tr>
+          <tr><th>Fecha</th><td>23 de marzo de 2026</td></tr>
+          <tr><th>Responsable</th><td>Equipo del proyecto (basado en auditoría técnica del repositorio actual)</td></tr>
+          <tr><th>Estado</th><td>Candidato para revisión institucional</td></tr>
+        </tbody>
+      </table>
+      <p class="cover-note">El contenido se consolidó a partir de código real, configuración, pruebas, documentación existente y validaciones finales de calidad.</p>
+    </section>
+  <div class="page-break"></div>
+    <section>
+      <h1>Índice estructurado</h1>
+      <div class="toc-box">
+        <ol>
+          <li><a href="#resumen-ejecutivo">1. Resumen ejecutivo</a></li><li><a href="#antecedentes">2. Antecedentes y contexto del proyecto</a></li><li><a href="#alcance">3. Alcance funcional y no funcional</a></li><li><a href="#metodologia">4. Planificación y metodología de trabajo</a></li><li><a href="#arquitectura">5. Arquitectura del sistema</a></li><li><a href="#tecnologias">6. Tecnologías utilizadas</a></li><li><a href="#modelo-datos">7. Modelo de datos y fuentes de información</a></li><li><a href="#pipeline">8. Pipeline de ingesta y publicación</a></li><li><a href="#seguridad-resiliencia">9. Seguridad y resiliencia</a></li><li><a href="#riesgos">10. Riesgos, vulnerabilidades y análisis de impacto</a></li><li><a href="#pruebas">11. Pruebas realizadas</a></li><li><a href="#performance">12. Optimización y rendimiento</a></li><li><a href="#observabilidad">13. Observabilidad, trazabilidad y auditoría</a></li><li><a href="#cobertura-funcional">14. Cobertura funcional</a></li><li><a href="#limitaciones">15. Limitaciones actuales</a></li><li><a href="#conclusiones">16. Conclusiones y siguientes pasos</a></li><li><a href="#anexos">17. Anexos</a></li>
+        </ol>
+      </div>
+    </section>
+  <section id="resumen-ejecutivo"><h1>1. Resumen ejecutivo</h1><p>La plataforma CNBS Dashboard es una solución institucional para ingesta manual segura, validación, reconciliación, publicación versionada, activación controlada y consulta pública de información del sector asegurador.</p><p>El sistema está construido como un monorepo modular con tres planos principales: portal público, módulo administrativo y API/ETL. La primera versión operativa usa exclusivamente dos fuentes primarias reales: <code>premiums</code> y <code>financialPosition</code>. El informe preliminar se mantiene como referencia metodológica y de fórmulas, pero no participa como fuente runtime.</p><ul><li>Reduce dependencia de procesos manuales y de hojas de cálculo abiertas en tiempo de consulta.</li><li>Introduce staging, validación, reconciliación, publicación inmutable, versión activa y rollback.</li><li>Protege la integridad pública mediante la regla de honestidad: si un dato no es derivable con integridad, se muestra como no disponible.</li><li>Deja trazabilidad operativa desde la corrida cargada hasta la versión activa servida por el sitio público.</li></ul><div class="callout note"><strong>Criterio de verdad del documento</strong><div>Este documento se elaboró a partir del código real del repositorio, configuraciones, rutas, pruebas automatizadas y documentación existente en <code>docs/</code> y <code>docs/skills/</code>. Cuando un aspecto no pudo afirmarse con certeza, se declara como limitación, supuesto o pendiente.</div></div></section><section id="antecedentes"><h1>2. Antecedentes y contexto del proyecto</h1><p>La necesidad observable del proyecto es reemplazar un consumo operativo frágil basado en workbooks aislados por un proceso trazable y controlado que convierta archivos Excel institucionales en datasets publicados y reutilizables por aplicaciones web.</p><p>La arquitectura y el código muestran una orientación clara a resolver cuatro problemas de negocio: estandarizar la carga, homologar datos, publicar versiones inmutables y evitar que el sitio público dependa directamente de Excel. La existencia de staging, reconciliación, auditoría y rollback evidencia una preocupación explícita por control de calidad, reversibilidad y gobierno del dato.</p>
+    <table>
+      <caption>Contexto funcional derivado del repositorio auditado</caption>
+      <thead>
+        <tr><th>Tema</th><th>Evidencia observada</th><th>Interpretación documental</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Entrada de datos</td><td>Carga manual multiarchivo en admin y clasificación por firma</td><td>El sistema está pensado para operación controlada por personal institucional.</td></tr><tr><td>Gobierno del dato</td><td>Validación, reconciliación, publicación versionada y auditoría</td><td>Existe enfoque de control previo a exposición pública.</td></tr><tr><td>Operación pública</td><td>Portal público consume solo artefactos publicados</td><td>La consulta pública se desacopla del procesamiento pesado y de los archivos fuente.</td></tr><tr><td>Respaldo operativo</td><td>Rollback inmediato a una versión anterior</td><td>Se prioriza continuidad operativa y reversibilidad.</td></tr><tr><td>Restricción metodológica</td><td>Solo <code>premiums</code> y <code>financialPosition</code> son operativos</td><td>La primera versión está deliberadamente acotada para preservar integridad.</td></tr>
+      </tbody>
+    </table>
+  </section><section id="alcance"><h1>3. Alcance funcional y no funcional</h1>
+    <table>
+      <caption>Alcance observado en el sistema actual</caption>
+      <thead>
+        <tr><th>Categoría</th><th>Incluido en la primera versión</th><th>Fuera de alcance o limitado</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Fuentes operativas</td><td><code>premiums</code>, <code>financialPosition</code></td><td><code>incomeStatement</code> como fuente pública; claims/siniestros oficiales</td></tr><tr><td>Funciones administrativas</td><td>Login, carga, listado de corridas, reconciliación, publicación, versiones, historial, auditoría</td><td>Aprobaciones humanas multi-etapa, flujos BPM, firmas formales</td></tr><tr><td>Funciones públicas</td><td>Home, rankings, versión activa, ficha institucional</td><td>Analíticas históricas completas, exploradores avanzados, exportación pública</td></tr><tr><td>Persistencia</td><td>Filesystem versionado local</td><td>Base de datos transaccional, colas distribuidas, object storage</td></tr><tr><td>Seguridad</td><td>Validación de upload, sesión firmada, token firmado admin/API, RBAC, headers básicos, rate limiting</td><td>MFA, CSP/HSTS completos, autorización OIDC por grupos, antivirus/sandbox</td></tr><tr><td>Observabilidad</td><td>Health, métricas runtime en memoria, auditoría, trazabilidad de versión</td><td>Monitoreo centralizado, alertas, trazas distribuidas, SIEM</td></tr><tr><td>Rendimiento</td><td>Materialización de artefactos, caché en memoria, reducción de payloads, lazy charts</td><td>Escalado horizontal con caché distribuida o CDN especializada</td></tr>
+      </tbody>
+    </table>
+  <div class="callout warning"><strong>Restricción operativa clave</strong><div>El informe preliminar no se usa como fuente runtime. Solo actúa como oráculo de fórmulas, cuadros y relaciones de negocio. Esta restricción se preserva en el pipeline y en la narrativa pública.</div></div></section><section id="metodologia"><h1>4. Planificación y metodología de trabajo</h1><p>No se identificó en el repositorio una metodología formal declarada (por ejemplo, Scrum documentado, cronograma o actas). Sin embargo, la estructura del código, las pruebas, la documentación temática y el modelo de publicación permiten inferir una metodología operativa real de carácter iterativo, incremental, modular y orientada a validación.</p>
+    <table>
+      <caption>Metodología operativa inferida a partir del repositorio</caption>
+      <thead>
+        <tr><th>Rasgo metodológico inferido</th><th>Evidencia</th><th>Valor práctico</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Iterativo e incremental</td><td>Documentación temática por skills, endurecimientos sucesivos y pruebas de regresión</td><td>Permite cerrar primero estabilidad y luego ampliar cobertura sin romper el flujo base.</td></tr><tr><td>Modular</td><td>Monorepo con <code>apps/*</code> y <code>packages/*</code></td><td>Separa responsabilidades y facilita mantenimiento.</td></tr><tr><td>Orientado a validación</td><td>Gating explícito por validate/reconcile/publishability</td><td>La publicación depende de controles técnicos previos.</td></tr><tr><td>Versionado por publicaciones</td><td>Datasets inmutables y puntero activo</td><td>Cada publicación es trazable y reversible.</td></tr><tr><td>Hardening progresivo</td><td>Mejoras recientes de seguridad, performance y trazabilidad</td><td>La madurez se construye sin rehacer la arquitectura.</td></tr>
+      </tbody>
+    </table>
+  <p>Una lectura razonable de las fases del proyecto es la siguiente:</p><ol><li>Base de monorepo y separación de planos (web, admin, API, ETL, dominio, UI).</li><li>Ingesta Excel y clasificación por estructura.</li><li>Normalización canónica, validación y reconciliación.</li><li>Publicación versionada, versión activa y rollback.</li><li>Frontend público y módulo admin operativos.</li><li>Hardening de seguridad, resiliencia, trazabilidad y performance.</li><li>Cierre documental y preparación para piloto institucional.</li></ol><div class="callout warning"><strong>Supuesto metodológico declarado</strong><div>La planificación documentada en este apartado es inferida del diseño y de la evidencia técnica observable. No se encontró una herramienta formal de gestión del proyecto dentro del repositorio auditado.</div></div></section><section id="arquitectura"><h1>5. Arquitectura del sistema</h1><p>La solución usa una arquitectura modular de monorepo con desacoplamiento explícito entre interfaz pública, interfaz administrativa, API y motor de ingestión. El dato público nunca se deriva en tiempo de request a partir de Excel; siempre se sirve desde artefactos publicados y versionados.</p>
+    <div class="diagram-card">
+      <div class="diagram-title">Diagrama de arquitectura general</div>
+      <table class="diagram-table"><tbody><tr><td class="diagram-box default" colspan="1">Portal público<br><span class='small'>Next.js + React</span></td><td class="diagram-arrow">→</td><td class="diagram-box dark" colspan="1">API pública y privada<br><span class='small'>Fastify</span></td><td class="diagram-arrow">↔</td><td class="diagram-box default" colspan="1">Servicio ETL / Ingesta<br><span class='small'>clasificación, validación, normalización, publicación</span></td><td class="diagram-arrow">↔</td><td class="diagram-box warn" colspan="1">Storage versionado<br><span class='small'>quarantine, staging, published, active, audit</span></td></tr></tbody></table><table class="diagram-table"><tbody><tr><td class="diagram-box default" colspan="1">Módulo admin<br><span class='small'>Next.js + server actions</span></td><td class="diagram-arrow">→</td><td class="diagram-box dark" colspan="1">Autenticación y control<br><span class='small'>sesión firmada, token firmado, RBAC</span></td><td class="diagram-arrow">↗</td><td class="diagram-box warn" colspan="3">Observabilidad operativa<br><span class='small'>health, route metrics, audit trail, mapping summary</span></td></tr></tbody></table>
+    </div>
+  
+    <div class="diagram-card">
+      <div class="diagram-title">Diagrama de interacción entre módulos</div>
+      <table class="diagram-table"><tbody><tr><td class="diagram-box default" colspan="1">Usuario admin</td><td class="diagram-arrow">→</td><td class="diagram-box dark" colspan="1">apps/admin</td><td class="diagram-arrow">→</td><td class="diagram-box dark" colspan="1">apps/api /api/admin/*</td><td class="diagram-arrow">→</td><td class="diagram-box default" colspan="1">packages/etl</td></tr></tbody></table><table class="diagram-table"><tbody><tr><td class="diagram-box default" colspan="1">Usuario público</td><td class="diagram-arrow">→</td><td class="diagram-box dark" colspan="1">apps/web</td><td class="diagram-arrow">→</td><td class="diagram-box dark" colspan="1">apps/api /api/public/*</td><td class="diagram-arrow">→</td><td class="diagram-box warn" colspan="1">storage/published + storage/active</td></tr></tbody></table>
+    </div>
+  
+    <table>
+      <caption>Módulos estructurales del repositorio</caption>
+      <thead>
+        <tr><th>Componente</th><th>Ruta principal</th><th>Responsabilidad</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Portal público</td><td><code>apps/web</code></td><td>Presentar KPIs, rankings, versión activa y fichas institucionales sin leer Excel en runtime.</td></tr><tr><td>Módulo admin</td><td><code>apps/admin</code></td><td>Operar login, carga, revisión, publicación, historial y auditoría.</td></tr><tr><td>API</td><td><code>apps/api</code></td><td>Exponer endpoints públicos/privados, health, métricas de ruta y filtros multipart.</td></tr><tr><td>ETL y publicación</td><td><code>packages/etl</code></td><td>Clasificar, validar, normalizar, reconciliar, construir artefactos y publicar versiones.</td></tr><tr><td>Dominio</td><td><code>packages/domain</code></td><td>Modelos canónicos, catálogos, alias, versionado y firma de tokens.</td></tr><tr><td>Configuración</td><td><code>packages/config</code></td><td>Entorno, puertos, storage y límites de seguridad.</td></tr><tr><td>Storage local</td><td><code>storage/*</code></td><td>Persistencia de cuarentena, staging, datasets publicados, puntero activo y auditoría.</td></tr>
+      </tbody>
+    </table>
+  </section><section id="tecnologias"><h1>6. Tecnologías utilizadas</h1>
+    <table>
+      <caption>Tecnologías efectivamente usadas según los <code>package.json</code> y el código auditado</caption>
+      <thead>
+        <tr><th>Categoría</th><th>Tecnología</th><th>Uso real dentro del proyecto</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Lenguaje base</td><td>TypeScript</td><td>Tipado compartido entre apps y packages, contratos y seguridad de compilación.</td></tr><tr><td>Workspace</td><td>pnpm + Turbo</td><td>Monorepo, scripts coordinados de build/lint/test/typecheck.</td></tr><tr><td>Frontend público</td><td>Next.js 15 + React 19</td><td>Portal público con App Router y fetch server-side.</td></tr><tr><td>Frontend admin</td><td>Next.js 15 + React 19</td><td>Panel administrativo con server actions y rutas protegidas.</td></tr><tr><td>API</td><td>Fastify 5</td><td>Endpoints públicos, privados, health y métricas runtime.</td></tr><tr><td>Autenticación federada</td><td>openid-client</td><td>Flujo OIDC con state, nonce y PKCE.</td></tr><tr><td>Parsing Excel</td><td>ExcelJS</td><td>Lectura de workbooks y extracción de filas tabulares.</td></tr><tr><td>Inspección ZIP</td><td>JSZip</td><td>Inspección de seguridad del paquete OOXML.</td></tr><tr><td>Validación</td><td>Zod</td><td>Variables de entorno, contratos de metadata y schemas de workbook.</td></tr><tr><td>Visualización</td><td>ECharts + echarts-for-react</td><td>Charts del sitio público.</td></tr><tr><td>Tablas</td><td>@tanstack/react-table</td><td>Tablas y componentes UI reutilizables.</td></tr><tr><td>Testing</td><td>Vitest</td><td>Unit tests, integración y regresión.</td></tr><tr><td>Logs de desarrollo</td><td>pino-pretty</td><td>Salida legible del API en entorno local.</td></tr><tr><td>Normalización semántica</td><td>slugify + utilidades propias</td><td>Generación de claves, alias y matching canónico.</td></tr>
+      </tbody>
+    </table>
+  <div class="callout note"><strong>Nota sobre algoritmos especializados</strong><div>No se identificó un algoritmo formalmente denominado como especializado (por ejemplo, ML u optimización matemática avanzada). La estrategia técnica real se basa en reglas determinísticas: clasificación por señales, matching canónico, materialización de artefactos, caché en memoria, reducción de payload y carga diferida de componentes pesados.</div></div></section><section id="modelo-datos"><h1>7. Modelo de datos y fuentes de información</h1>
+    <table>
+      <caption>Política real de fuentes</caption>
+      <thead>
+        <tr><th>Tipo de fuente</th><th>Estado en la versión actual</th><th>Uso dentro del sistema</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>premiums</code></td><td>Operativa</td><td>Base para primas totales, participación de mercado, primas por institución, primas por ramo y rankings de primas.</td></tr><tr><td><code>financialPosition</code></td><td>Operativa</td><td>Base para activos, patrimonio, reservas técnicas, highlights y rankings financieros.</td></tr><tr><td><code>reference</code></td><td>No operativa / opcional</td><td>Oráculo para reconciliación y alineación metodológica de cuadros y fórmulas.</td></tr><tr><td><code>incomeStatement</code></td><td>Detectable pero no operativa</td><td>Trazabilidad, clasificación y validación semántica; no publica métricas oficiales.</td></tr>
+      </tbody>
+    </table>
+  <p>El modelo canónico se apoya en catálogos versionados de instituciones, ramos y cuentas financieras. La normalización resuelve alias, diferencias de acentuación, mojibake, espacios dobles, variaciones con slash y casos de mayúsculas/minúsculas irregulares. Cuando un alias puede mapear a más de un candidato, el sistema lo trata como ambiguo y bloquea su aceptación silenciosa.</p>
+    <table>
+      <caption>Estructuras de origen relevantes</caption>
+      <thead>
+        <tr><th>Dominio</th><th>Columnas o marcadores base</th><th>Derivaciones soportadas</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Primas</td><td><code>Fecha Reporte</code>, <code>CodInstitucion</code>, <code>Institucion</code>, <code>RamoPadre</code>, <code>Ramo</code>, <code>Saldo</code></td><td>Primas por institución, primas por ramo, market share, rankings de primas.</td></tr><tr><td>Balance</td><td><code>Tipo</code>, <code>Inst</code>, <code>Logo</code>, <code>FechaReporte</code>, <code>Linea</code>, <code>Cuenta</code>, <code>MonedaNacional</code>, <code>MonedaExtranjera</code></td><td>Activos, patrimonio, reservas técnicas, highlights y rankings financieros.</td></tr><tr><td>ER detectable</td><td>Marcadores como <code>UTILIDAD</code>, <code>RESULTADO NETO</code>, <code>INGRESOS FINANCIEROS</code></td><td>Solo clasificación y trazabilidad, no publicación operativa.</td></tr>
+      </tbody>
+    </table>
+  
+    <div class="diagram-card">
+      <div class="diagram-title">Diagrama de flujo de datos</div>
+      <table class="diagram-table"><tbody><tr><td class="diagram-box default" colspan="1">Workbooks cargados</td><td class="diagram-arrow">→</td><td class="diagram-box dark" colspan="1">Clasificación y parsing</td><td class="diagram-arrow">→</td><td class="diagram-box default" colspan="1">Facts canónicos</td><td class="diagram-arrow">→</td><td class="diagram-box warn" colspan="1">Aggregates / catálogos / reports</td><td class="diagram-arrow">→</td><td class="diagram-box dark" colspan="1">Sitio público y admin</td></tr></tbody></table>
+    </div>
+  </section><section id="pipeline"><h1>8. Pipeline de ingesta y publicación</h1><p>El flujo operativo vigente del proyecto es lineal y gobernado por puntos de control. La publicación solo se habilita cuando la corrida supera seguridad, clasificación, validación y reconciliación con el nivel de severidad permitido.</p>
+    <div class="diagram-card">
+      <div class="diagram-title">Diagrama de flujo de publicación</div>
+      <table class="diagram-table"><tbody><tr><td class="diagram-box default" colspan="1">Upload</td><td class="diagram-arrow">↓</td></tr></tbody></table><table class="diagram-table"><tbody><tr><td class="diagram-box dark" colspan="1">Staging</td><td class="diagram-arrow">↓</td></tr></tbody></table><table class="diagram-table"><tbody><tr><td class="diagram-box default" colspan="1">Validate</td><td class="diagram-arrow">↓</td></tr></tbody></table><table class="diagram-table"><tbody><tr><td class="diagram-box dark" colspan="1">Reconcile</td><td class="diagram-arrow">↓</td></tr></tbody></table><table class="diagram-table"><tbody><tr><td class="diagram-box default" colspan="1">Publish</td><td class="diagram-arrow">↓</td></tr></tbody></table><table class="diagram-table"><tbody><tr><td class="diagram-box warn" colspan="1">Active version</td><td class="diagram-arrow">↺</td></tr></tbody></table><table class="diagram-table"><tbody><tr><td class="diagram-box risk" colspan="1">Rollback</td></tr></tbody></table>
+    </div>
+  
+    <table>
+      <caption>Detalle del pipeline real</caption>
+      <thead>
+        <tr><th>Etapa</th><th>Qué hace</th><th>Resultado principal</th><th>Bloqueos o controles</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Upload</td><td>Recibe uno o varios <code>.xlsx</code> desde admin.</td><td>Archivos temporales y metadata de entrada.</td><td>Origen confiable, sesión válida, rate limiting, filtro multipart.</td></tr><tr><td>Quarantine</td><td>Persistencia inicial con hash y nombre saneado.</td><td><code>SourceFileRecord</code>.</td><td>Aún no implica publicación ni confianza funcional.</td></tr><tr><td>Security inspection</td><td>Revisa extensión, MIME, magic bytes, tamaño, macros, cifrado, protección y ratio ZIP.</td><td>Issues de seguridad.</td><td>Issues críticas bloquean la corrida.</td></tr><tr><td>Classification</td><td>Determina si el archivo es primas, balance, resultados, referencia o desconocido.</td><td>WorkbookKind y firma detectada.</td><td>Baja confianza o roles duplicados bloquean.</td></tr><tr><td>Parse + normalize</td><td>Parsea filas y las homologa contra catálogos canónicos.</td><td>Facts canónicos y <code>mappingSummary</code>.</td><td>Ambigüedad o alias no resuelto bloquean.</td></tr><tr><td>Validate</td><td>Revisa períodos, duplicados, marcadores, fuentes primarias y consistencia mínima.</td><td><code>validationSummary</code>.</td><td>Críticas/altas bloquean publicación.</td></tr><tr><td>Reconcile</td><td>Contrasta agregados con el workbook de referencia cuando existe.</td><td><code>reconciliationSummary</code>.</td><td>Issues severas degradan o bloquean según naturaleza.</td></tr><tr><td>Publish</td><td>Materializa metadata, facts, aggregates y catálogos en un dataset inmutable.</td><td>Nueva carpeta en <code>storage/published</code>.</td><td>No se permite publicar corridas bloqueadas.</td></tr><tr><td>Activate</td><td>Actualiza el puntero activo y el namespace de caché.</td><td>Versión activa servida al público.</td><td>Si no se llega a esta etapa, la versión anterior permanece activa.</td></tr><tr><td>Rollback</td><td>Repone la versión activa a una publicación previa.</td><td>Puntero activo actualizado.</td><td>No elimina datasets ni corridas históricas.</td></tr>
+      </tbody>
+    </table>
+  <div class="callout warning"><strong>Secuencia crítica</strong><div>La conmutación de la versión activa ocurre después de escribir la versión publicada. El switch real atómico del runtime es el puntero <code>storage/active/active-dataset.json</code>; el repositorio no implementa todavía un publish transaccional con directorio temporal y rename final del dataset completo.</div></div></section><section id="seguridad-resiliencia"><h1>9. Seguridad y resiliencia</h1>
+    <div class="diagram-card">
+      <div class="diagram-title">Diagrama de seguridad por capas</div>
+      <table class="diagram-table"><tbody><tr><td class="diagram-box default" colspan="1">Capa 1 · Acceso<br><span class='small'>cookie firmada, OIDC opcional, RBAC</span></td><td class="diagram-arrow">↓</td></tr></tbody></table><table class="diagram-table"><tbody><tr><td class="diagram-box dark" colspan="1">Capa 2 · Integración admin/API<br><span class='small'>secreto + token firmado</span></td><td class="diagram-arrow">↓</td></tr></tbody></table><table class="diagram-table"><tbody><tr><td class="diagram-box warn" colspan="1">Capa 3 · Upload hardening<br><span class='small'>multipart, MIME, magic bytes, zip, macros, cifrado</span></td><td class="diagram-arrow">↓</td></tr></tbody></table><table class="diagram-table"><tbody><tr><td class="diagram-box default" colspan="1">Capa 4 · Datos y matching<br><span class='small'>alias canónicos, ambigüedad bloqueante, degradación segura</span></td><td class="diagram-arrow">↓</td></tr></tbody></table><table class="diagram-table"><tbody><tr><td class="diagram-box dark" colspan="1">Capa 5 · Exposición HTTP<br><span class='small'>helmet, rate limiting, headers básicos, errores controlados</span></td></tr></tbody></table>
+    </div>
+  
+    <table>
+      <caption>Capas de seguridad documentadas contra el estado real</caption>
+      <thead>
+        <tr><th>Área</th><th>Control implementado</th><th>Estado</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Sesión admin</td><td>Cookie firmada y expirable</td><td>Implementado</td></tr><tr><td>Admin -> API</td><td>Token firmado de servicio y secreto compartido</td><td>Implementado</td></tr><tr><td>Roles</td><td>RBAC por permiso <code>upload/publish/rollback/audit/view</code></td><td>Implementado</td></tr><tr><td>Uploads</td><td>Extensión, MIME, magic bytes, macros, cifrado, ZIP ratio, tamaño</td><td>Implementado</td></tr><tr><td>Server actions</td><td>Validación de origen confiable</td><td>Implementado</td></tr><tr><td>HTTP security</td><td>Helmet en API y headers básicos en web/admin</td><td>Implementado parcialmente</td></tr><tr><td>OIDC</td><td>State, nonce, PKCE</td><td>Implementado parcialmente</td></tr><tr><td>OIDC por claims/grupos</td><td>Mapeo fino de autorización</td><td>Pendiente</td></tr><tr><td>CSP/HSTS completos</td><td>Políticas estrictas de navegador</td><td>Pendiente</td></tr><tr><td>Antivirus/sandbox upload</td><td>Inspección avanzada del binario</td><td>Pendiente</td></tr>
+      </tbody>
+    </table>
+  <div class="callout warning"><strong>Seguridad implementada vs. seguridad pendiente</strong><div>La primera versión ya contempla controles reales de integridad y acceso. Sin embargo, siguen pendientes cierres típicos de producción: eliminación de secretos por defecto, mapeo OIDC por claims/grupos, CSP/HSTS completos, cierre de CORS por allowlist, limpieza temprana de cuarentena y observabilidad de seguridad más profunda.</div></div></section><section id="riesgos"><h1>10. Riesgos, vulnerabilidades y análisis de impacto</h1>
+    <table>
+      <caption>Matriz de riesgos del estado actual</caption>
+      <thead>
+        <tr><th>Riesgo</th><th>Severidad</th><th>Probabilidad</th><th>Impacto</th><th>Mitigación actual</th><th>Recomendación</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Uso de credenciales y secreto por defecto en despliegue inseguro</td><td>Alta</td><td>Media</td><td>Muy alto</td><td>Documentación y modo local controlado</td><td>Exigir secretos no triviales y fail-closed fuera de local.</td></tr><tr><td>Autorización OIDC aún no mapeada por claims/grupos</td><td>Alta</td><td>Media</td><td>Alto</td><td>OIDC con identidad autenticada</td><td>Agregar allowlist y mapping de roles corporativos.</td></tr><tr><td>CORS abierto en API</td><td>Media</td><td>Media</td><td>Medio</td><td>Token firmado y secreto compartido</td><td>Restringir orígenes por entorno.</td></tr><tr><td>Carga de archivos maliciosos o corruptos</td><td>Alta</td><td>Media</td><td>Alto</td><td>Validaciones de workbook y cuarentena</td><td>Agregar limpieza temprana, sandbox y scanning avanzado.</td></tr><tr><td>Parser del workbook de referencia sensible a layout fijo</td><td>Media</td><td>Alta</td><td>Medio</td><td>Uso solo como referencia no operativa</td><td>Generalizar parser y agregar pruebas adicionales.</td></tr><tr><td>Cachés en memoria sin límites estrictos</td><td>Media</td><td>Media</td><td>Medio</td><td>Invalidación por namespace</td><td>Agregar políticas de tamaño/evicción o caché distribuida.</td></tr><tr><td>Concurrencia multiinstancia en publish/rollback</td><td>Alta</td><td>Baja</td><td>Alto</td><td>Modelo local single-node</td><td>Agregar locking y commit transaccional en producción.</td></tr><tr><td>Observabilidad solo local/en memoria</td><td>Media</td><td>Alta</td><td>Medio</td><td>Health, métricas runtime, auditoría</td><td>Integrar monitoreo y alertas persistentes.</td></tr><tr><td>Mensajes técnicos en inglés en algunos errores admin</td><td>Baja</td><td>Media</td><td>Bajo</td><td>Errores controlados</td><td>Completar localización y catálogos de mensaje.</td></tr>
+      </tbody>
+    </table>
+  <div class="callout risk"><strong>Interpretación institucional</strong><div>Los riesgos principales ya no se concentran en la integridad funcional del flujo, sino en el endurecimiento requerido para un despliegue productivo real. Para piloto o revisión institucional, el sistema está suficientemente controlado; para producción abierta todavía requiere cierres adicionales.</div></div></section><section id="pruebas"><h1>11. Pruebas realizadas</h1><p>La validación del sistema combina compuertas de calidad estática y pruebas automatizadas unitarias, de integración y de regresión. En la auditoría final del repositorio se ejecutaron satisfactoriamente <code>typecheck</code>, <code>lint</code>, <code>test</code> y <code>build</code> para todo el monorepo.</p>
+    <table>
+      <caption>Matriz sintética de pruebas</caption>
+      <thead>
+        <tr><th>Capa de prueba</th><th>Cobertura observada</th><th>Evidencia</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Type checking</td><td>Compilación sin errores en apps y packages</td><td><code>pnpm typecheck</code> OK</td></tr><tr><td>Lint</td><td>Reglas ESLint en monorepo completo</td><td><code>pnpm lint</code> OK</td></tr><tr><td>Build</td><td>Compilación de web, admin, API y packages</td><td><code>pnpm build</code> OK</td></tr><tr><td>Normalización y alias</td><td>Mojibake, tildes, slash, espacios, mayúsculas, ambigüedad</td><td><code>packages/domain/src/utils/normalization.test.ts</code></td></tr><tr><td>Firma de tokens</td><td>Generación y rechazo de tokens alterados</td><td><code>packages/domain/src/utils/signed-token.test.ts</code></td></tr><tr><td>Clasificación de workbooks</td><td>Primas, balance, referencia, ER</td><td><code>packages/etl/src/workbooks/signatures.test.ts</code></td></tr><tr><td>Flujo ETL</td><td>Publish, rollback, datasets parciales, MIME inválido, referencia sola, alias ambiguos</td><td><code>packages/etl/src/pipeline/ingestion-service.test.ts</code></td></tr><tr><td>API</td><td>Version, overview, institution detail, admin status, 401/404 controlados, degradación segura</td><td><code>apps/api/src/app.test.ts</code></td></tr><tr><td>Upload filter</td><td>Blob fantasma, multiarchivo válido, archivo temporal faltante</td><td><code>apps/api/src/services/upload-filter.test.ts</code></td></tr><tr><td>Helpers UI</td><td>Narrativa por datasetScope, upload form y fechas</td><td>Tests en <code>apps/web</code> y <code>apps/admin</code></td></tr>
+      </tbody>
+    </table>
+  <p>No se identificaron aún pruebas E2E completas de navegador, pruebas de carga, pruebas formales de headers de seguridad, pruebas del flujo OIDC completo ni validaciones de concurrencia multiinstancia. Estas carencias deben considerarse como pendientes para producción real.</p></section><section id="performance"><h1>12. Optimización y rendimiento</h1>
+    <table>
+      <caption>Optimizaciones observadas en el código</caption>
+      <thead>
+        <tr><th>Estrategia</th><th>Implementación real</th><th>Beneficio</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Materialización de artefactos</td><td>El ETL publica JSON listos para consumo</td><td>El sitio público no abre Excel en request-time.</td></tr><tr><td>Caché por versión activa</td><td>Puntero activo, metadata, artefactos, staging y audit cacheados en memoria</td><td>Reduce lecturas redundantes de disco.</td></tr><tr><td>Payload trimming</td><td>Overview limitado a 12 elementos; institution detail con preview + count; endpoints admin resumidos</td><td>Menos bytes transferidos y menor costo de serialización.</td></tr><tr><td>Compresión HTTP</td><td>Compresión global en API</td><td>Menor tráfico entre cliente y servidor.</td></tr><tr><td>Lazy charts</td><td>Carga diferida de ECharts en frontend público</td><td>Reduce peso JS inicial y costo de render.</td></tr><tr><td>Fetch en paralelo</td><td>Pantallas admin consultan varios endpoints en <code>Promise.all</code></td><td>Reduce espera total percibida.</td></tr><tr><td>Caché corta del frontend</td><td><code>revalidate: 15</code> y <code>stale-while-revalidate</code></td><td>Balance entre frescura y latencia.</td></tr>
+      </tbody>
+    </table>
+  
+    <table>
+      <caption>Resultados cualitativos de la pasada de performance</caption>
+      <thead>
+        <tr><th>Componente o ruta</th><th>Observación local validada</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>API pública</td><td><code>/api/public/overview</code>, <code>/version</code> y <code>/rankings</code> respondieron 200 en validación local con payloads compactos.</td></tr><tr><td>API admin</td><td><code>/api/admin/system/status</code>, <code>/ingestions</code>, <code>/publications</code> y <code>/audit</code> respondieron 200 con payloads reducidos respecto a versiones previas.</td></tr><tr><td>Web pública</td><td>Las rutas <code>/</code>, <code>/rankings</code>, <code>/version</code> y <code>/institutions/[institutionId]</code> cargaron de forma estable en las pruebas locales ejecutadas.</td></tr><tr><td>Admin</td><td>Las rutas <code>/ingestions</code>, <code>/reconciliation</code>, <code>/publish</code>, <code>/publications</code>, <code>/history</code> y <code>/audit</code> cargaron de forma estable.</td></tr><tr><td>Vista más pesada</td><td><code>/reconciliation</code> sigue siendo la pantalla naturalmente más costosa por conservar el JSON técnico completo de la corrida.</td></tr>
+      </tbody>
+    </table>
+  <div class="callout note"><strong>Conclusión de rendimiento</strong><div>No se usan algoritmos especializados avanzados; la mejora se obtuvo mediante decisiones de arquitectura y de ingeniería pragmática: precomputación, caché, límites de payload, compresión y carga diferida.</div></div></section><section id="observabilidad"><h1>13. Observabilidad, trazabilidad y auditoría</h1>
+    <div class="diagram-card">
+      <div class="diagram-title">Diagrama de trazabilidad corrida -> publicación -> versión activa</div>
+      <table class="diagram-table"><tbody><tr><td class="diagram-box default" colspan="1">Ingestion run<br><span class='small'>ingestionRunId</span></td><td class="diagram-arrow">→</td><td class="diagram-box dark" colspan="1">Dataset version<br><span class='small'>datasetVersionId</span></td><td class="diagram-arrow">→</td><td class="diagram-box warn" colspan="1">Active pointer<br><span class='small'>active-dataset.json</span></td><td class="diagram-arrow">→</td><td class="diagram-box dark" colspan="1">Runtime público</td></tr></tbody></table><table class="diagram-table"><tbody><tr><td class="diagram-box warn" colspan="7">Audit trail<br><span class='small'>INGESTION_STAGED / DATASET_PUBLISHED / DATASET_ROLLED_BACK</span></td></tr></tbody></table>
+    </div>
+  
+    <table>
+      <caption>Mecanismos reales de observabilidad y trazabilidad</caption>
+      <thead>
+        <tr><th>Elemento de trazabilidad</th><th>Qué conserva</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Staging run</td><td>Archivos fuente, summaries, draft dataset, artifacts y calidad de texto.</td></tr><tr><td>Metadata publicada</td><td>Scope, disponibilidad por dominio, períodos, summaries y mappingSummary cuando aplica.</td></tr><tr><td>Active pointer</td><td>Versión actualmente servida por el runtime.</td></tr><tr><td>Audit event</td><td>Actor, acción, run/dataset y detalles operativos.</td></tr><tr><td>Route metrics</td><td>Conteo, errores, duración y bytes por ruta en memoria del API.</td></tr><tr><td>Health endpoints</td><td>Estado del servicio, conteos, métricas de caché y storage.</td></tr>
+      </tbody>
+    </table>
+  <p>La solución incluye además telemetría de calidad de texto y matching, visible en reconciliación, auditoría y status administrativo: cantidad de textos reparados por mojibake, aliases resueltos tras normalización, directos, por fallback de línea, ambiguos y no resueltos.</p></section><section id="cobertura-funcional"><h1>14. Cobertura funcional</h1><p>La cobertura funcional real del producto está sintetizada en la matriz <code>docs/widget-coverage-matrix.md</code>. A continuación se resume el estado de los bloques visibles más relevantes.</p>
+    <table>
+      <caption>Resumen de cobertura funcional visible</caption>
+      <thead>
+        <tr><th>Vista</th><th>Bloque o widget</th><th>Estado real</th><th>Dominio requerido</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Home</td><td>KPIs ejecutivos</td><td>Soportado</td><td>Primas y/o balance según disponibilidad</td></tr><tr><td>Home</td><td>Primas por ramo</td><td>Soportado</td><td>Primas</td></tr><tr><td>Home</td><td>Participación de mercado</td><td>Soportado</td><td>Primas</td></tr><tr><td>Home</td><td>Top activos y reservas</td><td>Soportado</td><td>Balance</td></tr><tr><td>Home</td><td>Siniestros y relación siniestros/primas</td><td>No soportado honestamente</td><td>Claims no operativos</td></tr><tr><td>Rankings</td><td>Primas, activos, patrimonio, reservas</td><td>Soportado con degradación por dominio</td><td>Primas o balance</td></tr><tr><td>Versión</td><td>Metadata y cobertura de dominios</td><td>Soportado</td><td>Metadata publicada</td></tr><tr><td>Ficha institucional</td><td>Resumen de primas</td><td>Soportado</td><td>Primas</td></tr><tr><td>Ficha institucional</td><td>Resumen financiero</td><td>Soportado</td><td>Balance</td></tr><tr><td>Ficha institucional</td><td>Bloque de resultados</td><td>No soportado</td><td>Income statement no operativo</td></tr>
+      </tbody>
+    </table>
+  <p>La política de honestidad es parte de la cobertura funcional: la ausencia de una métrica o serie no se considera falla de UX sino comportamiento esperado cuando la fuente operativa no existe o no permite derivación íntegra.</p></section><section id="limitaciones"><h1>15. Limitaciones actuales</h1><ul><li>No existe fuente operativa de claims/siniestros; por tanto, no se publican claims ni ratios dependientes de claims.</li><li><code>incomeStatement</code> sigue fuera de la política operativa pública.</li><li>El parser del workbook de referencia continúa sensible a layouts concretos y debe generalizarse si cambia el formato del oráculo.</li><li>No hay base de datos, cola distribuida ni locking multiinstancia para publicación concurrente.</li><li>OIDC aún no resuelve roles por claims/grupos corporativos.</li><li>La observabilidad es suficiente para piloto, pero no para una operación productiva con monitoreo centralizado.</li><li>No se integraron capturas congeladas del sistema en estos documentos; se utilizaron diagramas construidos sobre la arquitectura real auditada.</li></ul></section><section id="conclusiones"><h1>16. Conclusiones y siguientes pasos</h1><p>El sistema auditado se encuentra en una condición madura para una primera revisión institucional y para un piloto controlado. La arquitectura actual es coherente con el problema que resuelve: desacopla la ingestión de los archivos fuente, controla la calidad antes de publicar y protege al sitio público de métricas o series no soportadas.</p><p>La recomendación técnica es mantener la arquitectura actual y concentrar la siguiente etapa en cierres de producción: gobierno de acceso OIDC por claims/grupos, eliminación de secretos por defecto, observabilidad persistente, hardening adicional de uploads, publicación transaccional más estricta y lineamientos de despliegue con proxy/TLS/CORS cerrados.</p>
+    <table>
+      <caption>Conclusión ejecutiva</caption>
+      <thead>
+        <tr><th>Indicador de madurez</th><th>Estimación honesta</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Readiness para revisión institucional</td><td>Alta</td></tr><tr><td>Readiness para piloto controlado</td><td>Alta</td></tr><tr><td>Readiness para producción abierta</td><td>Parcial / requiere cierres adicionales</td></tr><tr><td>Estimación global de readiness</td><td>85 %</td></tr>
+      </tbody>
+    </table>
+  </section><section id="anexos"><h1>17. Anexos</h1><h2>17.1 Glosario</h2>
+    <table>
+      <caption>Glosario principal</caption>
+      <thead>
+        <tr><th>Término</th><th>Definición</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Corrida</td><td>Conjunto de archivos cargados y procesados como una unidad en staging.</td></tr><tr><td>Staging</td><td>Estado intermedio donde la corrida queda validada y lista para revisión.</td></tr><tr><td>Dataset version</td><td>Versión publicada e inmutable del dataset generado por una corrida.</td></tr><tr><td>Versión activa</td><td>Dataset publicado que el runtime público consulta actualmente.</td></tr><tr><td>Rollback</td><td>Cambio del puntero activo hacia una versión publicada anterior.</td></tr><tr><td>Publishability</td><td>Semáforo técnico de publicación: <code>publishable</code>, <code>warningOnly</code> o <code>blocked</code>.</td></tr><tr><td>Oráculo preliminar</td><td>Workbook de referencia usado para reconciliación, fórmulas y cuadros, pero no como fuente runtime.</td></tr>
+      </tbody>
+    </table>
+  <h2>17.2 Tabla de rutas y endpoints</h2>
+    <table>
+      <caption>Rutas principales</caption>
+      <thead>
+        <tr><th>Plano</th><th>Ruta o endpoint</th><th>Propósito</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Web pública</td><td><code>/</code></td><td>Vista ejecutiva principal.</td></tr><tr><td>Web pública</td><td><code>/rankings</code></td><td>Rankings institucionales.</td></tr><tr><td>Web pública</td><td><code>/version</code></td><td>Metadata de la versión activa.</td></tr><tr><td>Web pública</td><td><code>/institutions/[institutionId]</code></td><td>Ficha institucional.</td></tr><tr><td>Admin</td><td><code>/upload</code></td><td>Carga de workbooks.</td></tr><tr><td>Admin</td><td><code>/ingestions</code></td><td>Listado de corridas staging.</td></tr><tr><td>Admin</td><td><code>/reconciliation</code></td><td>Revisión técnica detallada.</td></tr><tr><td>Admin</td><td><code>/publish</code></td><td>Publicación de corridas publicables.</td></tr><tr><td>Admin</td><td><code>/publications</code> / <code>/history</code></td><td>Versiones publicadas y rollback.</td></tr><tr><td>Admin</td><td><code>/audit</code></td><td>Bitácora operativa.</td></tr><tr><td>API pública</td><td><code>GET /api/public/*</code></td><td>Consumo del portal público y clientes de lectura.</td></tr><tr><td>API admin</td><td><code>GET/POST /api/admin/*</code></td><td>Operación administrativa segura.</td></tr>
+      </tbody>
+    </table>
+  <h2>17.3 Fuentes documentales internas utilizadas</h2><ul><li><code>docs/architecture.md</code></li><li><code>docs/ingestion-pipeline.md</code></li><li><code>docs/source-policy.md</code></li><li><code>docs/formula-reference.md</code></li><li><code>docs/chart-specs.md</code></li><li><code>docs/operational-traceability.md</code></li><li><code>docs/widget-coverage-matrix.md</code></li><li><code>docs/security.md</code></li><li><code>docs/testing-strategy.md</code></li><li><code>docs/skills/*.md</code></li></ul></section>
+</body>
+</html>
