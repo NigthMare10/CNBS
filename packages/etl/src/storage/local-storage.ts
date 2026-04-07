@@ -2,7 +2,14 @@ import { copyFile, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs
 import { randomUUID } from "node:crypto";
 import { basename, dirname, join, resolve } from "node:path";
 import { storagePaths } from "@cnbs/config";
-import type { AuditEvent, DatasetVersionRecord, SourceFileRecord } from "@cnbs/domain";
+import type {
+  AliasResolutionExample,
+  AuditEvent,
+  DatasetVersionRecord,
+  MappingDomainSummary,
+  SourceFileRecord,
+  TopAliasRepair
+} from "@cnbs/domain";
 import { datasetVersionRecordSchema } from "@cnbs/schemas";
 import type { z } from "zod";
 import type { CanonicalDatasetArtifacts, StagedIngestionRun, UploadedWorkbookInput } from "../types";
@@ -147,6 +154,66 @@ function mapDomainAvailabilityEntry(
   };
 }
 
+function mapMappingDomainSummary(value: MappingDomainSummary): MappingDomainSummary {
+  return {
+    totalAttempts: value.totalAttempts ?? 0,
+    repairedByNormalization: value.repairedByNormalization ?? 0,
+    aliasesMatched: value.aliasesMatched ?? 0,
+    fallbackByLineNumber: value.fallbackByLineNumber ?? 0,
+    ambiguousAliases: value.ambiguousAliases ?? 0,
+    unresolvedAliases: value.unresolvedAliases ?? 0,
+    textsRequiringMojibakeRepair: value.textsRequiringMojibakeRepair ?? 0,
+    aliasesResolvedAfterNormalization: value.aliasesResolvedAfterNormalization ?? 0,
+    aliasesResolvedByDirectAlias: value.aliasesResolvedByDirectAlias ?? 0
+  };
+}
+
+function mapTopAliasRepair(value: TopAliasRepair): TopAliasRepair {
+  return {
+    domain: value.domain,
+    originalValue: value.originalValue ?? "",
+    repairedValue: value.repairedValue ?? "",
+    normalizedValue: value.normalizedValue ?? "",
+    canonicalId: value.canonicalId ?? "",
+    canonicalName: value.canonicalName ?? "",
+    strategy: value.strategy,
+    count: value.count ?? 0
+  };
+}
+
+function mapAliasResolutionExample(value: AliasResolutionExample): AliasResolutionExample {
+  return {
+    domain: value.domain,
+    scope: value.scope ?? "",
+    originalValue: value.originalValue ?? "",
+    repairedValue: value.repairedValue ?? "",
+    normalizedValue: value.normalizedValue ?? "",
+    canonicalId: value.canonicalId ?? null,
+    canonicalName: value.canonicalName ?? null,
+    strategy: value.strategy,
+    lineNumber: value.lineNumber ?? null,
+    usedMojibakeRepair: value.usedMojibakeRepair ?? false,
+    requiredNormalization: value.requiredNormalization ?? false,
+    candidateIds: value.candidateIds ?? [],
+    candidateNames: value.candidateNames ?? [],
+    ambiguityReason: value.ambiguityReason ?? null
+  };
+}
+
+function mapSourceFileRecord(value: SourceFileRecord): SourceFileRecord {
+  return {
+    sourceFileId: value.sourceFileId ?? "",
+    kind: value.kind,
+    originalFilename: value.originalFilename ?? "",
+    storedFilename: value.storedFilename ?? "",
+    sha256: value.sha256 ?? "",
+    sizeBytes: value.sizeBytes ?? 0,
+    mimeType: value.mimeType ?? "",
+    detectedSignature: value.detectedSignature ?? "",
+    uploadedAt: value.uploadedAt ?? ""
+  };
+}
+
 function mapValidationSummary(value: ParsedDatasetVersionRecord["validationSummary"]): DatasetVersionRecord["validationSummary"] {
   return {
     publishability: value.publishability,
@@ -205,14 +272,14 @@ function mapMappingSummary(value: ParsedDatasetVersionRecord["mappingSummary"]):
       unresolvedAliases: value.textQuality.unresolvedAliases
     },
     domains: {
-      institution: { ...value.domains.institution },
-      insuranceLine: { ...value.domains.insuranceLine },
-      financialAccount: { ...value.domains.financialAccount }
+      institution: mapMappingDomainSummary(value.domains.institution),
+      insuranceLine: mapMappingDomainSummary(value.domains.insuranceLine),
+      financialAccount: mapMappingDomainSummary(value.domains.financialAccount)
     },
-    topAliasRepairs: value.topAliasRepairs.map((item) => ({ ...item })),
-    resolvedExamples: value.resolvedExamples.map((item) => ({ ...item })),
-    ambiguousExamples: value.ambiguousExamples.map((item) => ({ ...item })),
-    unresolvedExamples: value.unresolvedExamples.map((item) => ({ ...item }))
+    topAliasRepairs: value.topAliasRepairs.map((item) => mapTopAliasRepair(item)),
+    resolvedExamples: value.resolvedExamples.map((item) => mapAliasResolutionExample(item)),
+    ambiguousExamples: value.ambiguousExamples.map((item) => mapAliasResolutionExample(item)),
+    unresolvedExamples: value.unresolvedExamples.map((item) => mapAliasResolutionExample(item))
   };
 }
 
@@ -226,7 +293,7 @@ function mapDatasetVersionRecord(value: ParsedDatasetVersionRecord): DatasetVers
     createdAt: value.createdAt,
     publishedAt: value.publishedAt,
     uploadedBy: value.uploadedBy,
-    sourceFiles: value.sourceFiles.map((sourceFile): SourceFileRecord => ({ ...sourceFile })),
+    sourceFiles: value.sourceFiles.map((sourceFile) => mapSourceFileRecord(sourceFile)),
     businessPeriods: {
       premiums: mapBusinessPeriod(value.businessPeriods.premiums),
       financialPosition: mapBusinessPeriod(value.businessPeriods.financialPosition),
