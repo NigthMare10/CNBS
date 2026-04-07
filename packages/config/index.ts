@@ -6,6 +6,18 @@ function defaultStorageRoot(): string {
   return process.env.CNBS_STORAGE_ROOT ?? (process.env.VERCEL ? "/tmp/cnbs-storage" : "./storage");
 }
 
+function resolvePublicApiBaseUrl(input: string | undefined): string {
+  if (input) {
+    return z.string().url().parse(input);
+  }
+
+  if (process.env.VERCEL || process.env.VERCEL_ENV) {
+    throw new Error("CNBS_PUBLIC_API_BASE_URL is required in Vercel environments.");
+  }
+
+  return "http://localhost:4000";
+}
+
 const envSchema = z.object({
   CNBS_ADMIN_USER: z.string().default("admin"),
   CNBS_ADMIN_PASSWORD: z.string().default("change-me"),
@@ -21,11 +33,16 @@ const envSchema = z.object({
   CNBS_DISPLAY_TIME_ZONE: z.string().default("America/Tegucigalpa"),
   CNBS_DISPLAY_LOCALE: z.string().default("es-HN"),
   CNBS_API_PORT: z.coerce.number().int().positive().default(4000),
-  CNBS_PUBLIC_API_BASE_URL: z.string().url().default("http://localhost:4000"),
+  CNBS_PUBLIC_API_BASE_URL: z.string().optional(),
   CNBS_STORAGE_ROOT: z.string().default(defaultStorageRoot())
 });
 
-export const env = envSchema.parse(process.env);
+const parsedEnv = envSchema.parse(process.env);
+
+export const env = {
+  ...parsedEnv,
+  CNBS_PUBLIC_API_BASE_URL: resolvePublicApiBaseUrl(parsedEnv.CNBS_PUBLIC_API_BASE_URL)
+} as const;
 
 const configDir = dirname(fileURLToPath(import.meta.url));
 export const workspaceRoot = resolve(configDir, "..", "..");
