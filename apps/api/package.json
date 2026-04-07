@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "corepack pnpm --filter @cnbs/config build && corepack pnpm --filter @cnbs/domain build && corepack pnpm --filter @cnbs/schemas build && corepack pnpm --filter @cnbs/etl build && tsc -p tsconfig.json",
     "dev": "tsx watch src/server.ts",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc -p tsconfig.json --noEmit",

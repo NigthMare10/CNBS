@@ -8,11 +8,20 @@ function defaultStorageRoot(): string {
 
 function resolvePublicApiBaseUrl(input: string | undefined): string {
   if (input) {
-    return z.string().url().parse(input);
+    const url = new URL(z.string().url().parse(input.trim()));
+
+    if (
+      (process.env.VERCEL || process.env.VERCEL_ENV) &&
+      (url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "::1")
+    ) {
+      throw new Error("CNBS_PUBLIC_API_BASE_URL must be a public API URL in Vercel, never localhost or 127.0.0.1.");
+    }
+
+    return url.toString().replace(/\/$/u, "");
   }
 
   if (process.env.VERCEL || process.env.VERCEL_ENV) {
-    throw new Error("CNBS_PUBLIC_API_BASE_URL is required in Vercel environments.");
+    throw new Error("CNBS_PUBLIC_API_BASE_URL is required in Vercel for cnbs-web and cnbs-admin builds.");
   }
 
   return "http://localhost:4000";
