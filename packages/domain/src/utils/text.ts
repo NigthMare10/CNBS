@@ -1,4 +1,6 @@
-import slugify from "slugify";
+import slugifyLib from "slugify";
+
+const slugify = slugifyLib as unknown as (str: string, opts?: any) => string;
 
 const mojibakeMap: Record<string, string> = {
   "Ã¡": "á",
