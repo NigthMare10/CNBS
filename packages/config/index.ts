@@ -2,6 +2,10 @@ import { fileURLToPath } from "node:url";
 import { dirname, isAbsolute, resolve } from "node:path";
 import { z } from "zod";
 
+function defaultStorageRoot(): string {
+  return process.env.CNBS_STORAGE_ROOT ?? (process.env.VERCEL ? "/tmp/cnbs-storage" : "./storage");
+}
+
 const envSchema = z.object({
   CNBS_ADMIN_USER: z.string().default("admin"),
   CNBS_ADMIN_PASSWORD: z.string().default("change-me"),
@@ -18,13 +22,14 @@ const envSchema = z.object({
   CNBS_DISPLAY_LOCALE: z.string().default("es-HN"),
   CNBS_API_PORT: z.coerce.number().int().positive().default(4000),
   CNBS_PUBLIC_API_BASE_URL: z.string().url().default("http://localhost:4000"),
-  CNBS_STORAGE_ROOT: z.string().default("./storage")
+  CNBS_STORAGE_ROOT: z.string().default(defaultStorageRoot())
 });
 
 export const env = envSchema.parse(process.env);
 
 const configDir = dirname(fileURLToPath(import.meta.url));
 export const workspaceRoot = resolve(configDir, "..", "..");
+export const bundledStorageRoot = resolve(workspaceRoot, "storage");
 
 function resolveStorageRoot(): string {
   return isAbsolute(env.CNBS_STORAGE_ROOT)

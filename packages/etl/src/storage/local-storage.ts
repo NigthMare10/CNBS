@@ -1,7 +1,7 @@
-import { copyFile, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { copyFile, cp, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import { basename, dirname, join, resolve } from "node:path";
-import { storagePaths } from "@cnbs/config";
+import { bundledStorageRoot, storagePaths } from "@cnbs/config";
 import type {
   AliasResolutionExample,
   AuditEvent,
@@ -22,6 +22,42 @@ async function ensureDirectory(path: string): Promise<void> {
 async function writeJson(path: string, data: unknown): Promise<void> {
   await ensureDirectory(dirname(path));
   await writeFile(path, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+}
+
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await stat(path);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function directoryHasEntries(path: string): Promise<boolean> {
+  try {
+    return (await readdir(path)).length > 0;
+  } catch {
+    return false;
+  }
+}
+
+async function seedWritableStorageIfNeeded(): Promise<void> {
+  if (!process.env.VERCEL || storagePaths.root === bundledStorageRoot) {
+    return;
+  }
+
+  if (!(await pathExists(bundledStorageRoot)) || (await directoryHasEntries(storagePaths.root))) {
+    return;
+  }
+
+  await ensureDirectory(storagePaths.root);
+
+  const entries = await readdir(bundledStorageRoot);
+  await Promise.all(
+    entries.map(async (entry) => {
+      await cp(join(bundledStorageRoot, entry), join(storagePaths.root, entry), { recursive: true, force: true });
+    })
+  );
 }
 
 async function readJson<T>(path: string): Promise<T> {
@@ -526,6 +562,7 @@ export class LocalStorageRepository {
   }
 
   async initialize(): Promise<void> {
+    await seedWritableStorageIfNeeded();
     await Promise.all(Object.values(storagePaths).map((directoryPath) => ensureDirectory(directoryPath)));
     await this.ensureCacheStateFile();
   }
