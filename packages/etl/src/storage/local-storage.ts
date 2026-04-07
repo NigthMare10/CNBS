@@ -60,6 +60,14 @@ async function seedWritableStorageIfNeeded(): Promise<void> {
   );
 }
 
+async function listPublishedDatasetIds(): Promise<string[]> {
+  try {
+    return (await readdir(storagePaths.published)).sort().reverse();
+  } catch {
+    return [];
+  }
+}
+
 async function readJson<T>(path: string): Promise<T> {
   const value = JSON.parse(await readFile(path, "utf8")) as T;
   return value;
@@ -99,6 +107,11 @@ interface RepositoryCacheStats {
 
 type ParsedDatasetVersionRecord = z.infer<typeof datasetVersionRecordSchema>;
 
+interface ActivePointerFile {
+  datasetVersionId: string | null;
+  updatedAt: string | null;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -126,6 +139,13 @@ function createBootstrapCacheNamespaceState(): CacheNamespaceState {
     namespace: "bootstrap",
     activeDatasetVersionId: null,
     updatedAt: null
+  };
+}
+
+function createActivePointerFile(datasetVersionId: string | null, updatedAt: string | null): ActivePointerFile {
+  return {
+    datasetVersionId,
+    updatedAt
   };
 }
 
@@ -561,10 +581,38 @@ export class LocalStorageRepository {
     this.lastCacheCheckAt = Date.now();
   }
 
+  private async ensureActivePointerConsistency(): Promise<void> {
+    const publishedDatasetIds = await listPublishedDatasetIds();
+    if (publishedDatasetIds.length === 0) {
+      return;
+    }
+
+    const selectedDatasetVersionId = publishedDatasetIds[0] ?? null;
+    const activePointerPath = join(storagePaths.active, "active-dataset.json");
+    const currentPointer = await readJson<unknown>(activePointerPath).catch(() => null);
+    const normalizedPointer = normalizeActiveDatasetPointer(currentPointer, this.namespaceState);
+
+    if (normalizedPointer.datasetVersionId && publishedDatasetIds.includes(normalizedPointer.datasetVersionId)) {
+      return;
+    }
+
+    const updatedAt = new Date().toISOString();
+    const nextNamespaceState: CacheNamespaceState = {
+      namespace: `${Date.now()}-${randomUUID().slice(0, 8)}`,
+      activeDatasetVersionId: selectedDatasetVersionId,
+      updatedAt
+    };
+
+    await writeJson(activePointerPath, createActivePointerFile(selectedDatasetVersionId, updatedAt));
+    await writeJson(this.cacheStatePath(), nextNamespaceState);
+    this.invalidateProcessCaches("active-pointer-repaired", nextNamespaceState);
+  }
+
   async initialize(): Promise<void> {
     await seedWritableStorageIfNeeded();
     await Promise.all(Object.values(storagePaths).map((directoryPath) => ensureDirectory(directoryPath)));
     await this.ensureCacheStateFile();
+    await this.ensureActivePointerConsistency();
   }
 
   async storeUploadedWorkbook(input: UploadedWorkbookInput): Promise<SourceFileRecord> {
