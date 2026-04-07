@@ -254,6 +254,112 @@ function mapMappingSummary(value: ParsedDatasetVersionRecord["mappingSummary"]):
     return undefined;
   }
 
+  const institutionDomain: MappingDomainSummary = {
+    totalAttempts: value.domains.institution.totalAttempts ?? 0,
+    repairedByNormalization: value.domains.institution.repairedByNormalization ?? 0,
+    aliasesMatched: value.domains.institution.aliasesMatched ?? 0,
+    fallbackByLineNumber: value.domains.institution.fallbackByLineNumber ?? 0,
+    ambiguousAliases: value.domains.institution.ambiguousAliases ?? 0,
+    unresolvedAliases: value.domains.institution.unresolvedAliases ?? 0,
+    textsRequiringMojibakeRepair: value.domains.institution.textsRequiringMojibakeRepair ?? 0,
+    aliasesResolvedAfterNormalization: value.domains.institution.aliasesResolvedAfterNormalization ?? 0,
+    aliasesResolvedByDirectAlias: value.domains.institution.aliasesResolvedByDirectAlias ?? 0
+  };
+
+  const insuranceLineDomain: MappingDomainSummary = {
+    totalAttempts: value.domains.insuranceLine.totalAttempts ?? 0,
+    repairedByNormalization: value.domains.insuranceLine.repairedByNormalization ?? 0,
+    aliasesMatched: value.domains.insuranceLine.aliasesMatched ?? 0,
+    fallbackByLineNumber: value.domains.insuranceLine.fallbackByLineNumber ?? 0,
+    ambiguousAliases: value.domains.insuranceLine.ambiguousAliases ?? 0,
+    unresolvedAliases: value.domains.insuranceLine.unresolvedAliases ?? 0,
+    textsRequiringMojibakeRepair: value.domains.insuranceLine.textsRequiringMojibakeRepair ?? 0,
+    aliasesResolvedAfterNormalization: value.domains.insuranceLine.aliasesResolvedAfterNormalization ?? 0,
+    aliasesResolvedByDirectAlias: value.domains.insuranceLine.aliasesResolvedByDirectAlias ?? 0
+  };
+
+  const financialAccountDomain: MappingDomainSummary = {
+    totalAttempts: value.domains.financialAccount.totalAttempts ?? 0,
+    repairedByNormalization: value.domains.financialAccount.repairedByNormalization ?? 0,
+    aliasesMatched: value.domains.financialAccount.aliasesMatched ?? 0,
+    fallbackByLineNumber: value.domains.financialAccount.fallbackByLineNumber ?? 0,
+    ambiguousAliases: value.domains.financialAccount.ambiguousAliases ?? 0,
+    unresolvedAliases: value.domains.financialAccount.unresolvedAliases ?? 0,
+    textsRequiringMojibakeRepair: value.domains.financialAccount.textsRequiringMojibakeRepair ?? 0,
+    aliasesResolvedAfterNormalization: value.domains.financialAccount.aliasesResolvedAfterNormalization ?? 0,
+    aliasesResolvedByDirectAlias: value.domains.financialAccount.aliasesResolvedByDirectAlias ?? 0
+  };
+
+  const topAliasRepairs = value.topAliasRepairs.map((item) =>
+    mapTopAliasRepair({
+      domain: item.domain ?? "institution",
+      originalValue: item.originalValue ?? "",
+      repairedValue: item.repairedValue ?? "",
+      normalizedValue: item.normalizedValue ?? "",
+      canonicalId: item.canonicalId ?? "",
+      canonicalName: item.canonicalName ?? "",
+      strategy: item.strategy ?? "normalized-alias",
+      count: item.count ?? 0
+    })
+  );
+
+  const resolvedExamples = value.resolvedExamples.map((item) =>
+    mapAliasResolutionExample({
+      domain: item.domain ?? "institution",
+      scope: item.scope ?? "",
+      originalValue: item.originalValue ?? "",
+      repairedValue: item.repairedValue ?? "",
+      normalizedValue: item.normalizedValue ?? "",
+      canonicalId: item.canonicalId ?? null,
+      canonicalName: item.canonicalName ?? null,
+      strategy: item.strategy ?? "unresolved",
+      lineNumber: item.lineNumber ?? null,
+      usedMojibakeRepair: item.usedMojibakeRepair ?? false,
+      requiredNormalization: item.requiredNormalization ?? false,
+      candidateIds: item.candidateIds ?? [],
+      candidateNames: item.candidateNames ?? [],
+      ambiguityReason: item.ambiguityReason ?? null
+    })
+  );
+
+  const ambiguousExamples = value.ambiguousExamples.map((item) =>
+    mapAliasResolutionExample({
+      domain: item.domain ?? "institution",
+      scope: item.scope ?? "",
+      originalValue: item.originalValue ?? "",
+      repairedValue: item.repairedValue ?? "",
+      normalizedValue: item.normalizedValue ?? "",
+      canonicalId: item.canonicalId ?? null,
+      canonicalName: item.canonicalName ?? null,
+      strategy: item.strategy ?? "ambiguous",
+      lineNumber: item.lineNumber ?? null,
+      usedMojibakeRepair: item.usedMojibakeRepair ?? false,
+      requiredNormalization: item.requiredNormalization ?? false,
+      candidateIds: item.candidateIds ?? [],
+      candidateNames: item.candidateNames ?? [],
+      ambiguityReason: item.ambiguityReason ?? null
+    })
+  );
+
+  const unresolvedExamples = value.unresolvedExamples.map((item) =>
+    mapAliasResolutionExample({
+      domain: item.domain ?? "institution",
+      scope: item.scope ?? "",
+      originalValue: item.originalValue ?? "",
+      repairedValue: item.repairedValue ?? "",
+      normalizedValue: item.normalizedValue ?? "",
+      canonicalId: item.canonicalId ?? null,
+      canonicalName: item.canonicalName ?? null,
+      strategy: item.strategy ?? "unresolved",
+      lineNumber: item.lineNumber ?? null,
+      usedMojibakeRepair: item.usedMojibakeRepair ?? false,
+      requiredNormalization: item.requiredNormalization ?? false,
+      candidateIds: item.candidateIds ?? [],
+      candidateNames: item.candidateNames ?? [],
+      ambiguityReason: item.ambiguityReason ?? null
+    })
+  );
+
   return {
     repairedByNormalization: value.repairedByNormalization,
     aliasesMatched: value.aliasesMatched,
@@ -272,19 +378,32 @@ function mapMappingSummary(value: ParsedDatasetVersionRecord["mappingSummary"]):
       unresolvedAliases: value.textQuality.unresolvedAliases
     },
     domains: {
-      institution: mapMappingDomainSummary(value.domains.institution),
-      insuranceLine: mapMappingDomainSummary(value.domains.insuranceLine),
-      financialAccount: mapMappingDomainSummary(value.domains.financialAccount)
+      institution: mapMappingDomainSummary(institutionDomain),
+      insuranceLine: mapMappingDomainSummary(insuranceLineDomain),
+      financialAccount: mapMappingDomainSummary(financialAccountDomain)
     },
-    topAliasRepairs: value.topAliasRepairs.map((item) => mapTopAliasRepair(item)),
-    resolvedExamples: value.resolvedExamples.map((item) => mapAliasResolutionExample(item)),
-    ambiguousExamples: value.ambiguousExamples.map((item) => mapAliasResolutionExample(item)),
-    unresolvedExamples: value.unresolvedExamples.map((item) => mapAliasResolutionExample(item))
+    topAliasRepairs,
+    resolvedExamples,
+    ambiguousExamples,
+    unresolvedExamples
   };
 }
 
 function mapDatasetVersionRecord(value: ParsedDatasetVersionRecord): DatasetVersionRecord {
   const mappingSummary = mapMappingSummary(value.mappingSummary);
+  const sourceFiles = value.sourceFiles.map((sourceFile) =>
+    mapSourceFileRecord({
+      sourceFileId: sourceFile.sourceFileId ?? "",
+      kind: sourceFile.kind ?? "unknown",
+      originalFilename: sourceFile.originalFilename ?? "",
+      storedFilename: sourceFile.storedFilename ?? "",
+      sha256: sourceFile.sha256 ?? "",
+      sizeBytes: sourceFile.sizeBytes ?? 0,
+      mimeType: sourceFile.mimeType ?? "",
+      detectedSignature: sourceFile.detectedSignature ?? "",
+      uploadedAt: sourceFile.uploadedAt ?? ""
+    })
+  );
 
   return {
     datasetVersionId: value.datasetVersionId,
@@ -293,7 +412,7 @@ function mapDatasetVersionRecord(value: ParsedDatasetVersionRecord): DatasetVers
     createdAt: value.createdAt,
     publishedAt: value.publishedAt,
     uploadedBy: value.uploadedBy,
-    sourceFiles: value.sourceFiles.map((sourceFile) => mapSourceFileRecord(sourceFile)),
+    sourceFiles,
     businessPeriods: {
       premiums: mapBusinessPeriod(value.businessPeriods.premiums),
       financialPosition: mapBusinessPeriod(value.businessPeriods.financialPosition),
