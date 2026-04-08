@@ -5,10 +5,10 @@ import helmet from "@fastify/helmet";
 import multipart from "@fastify/multipart";
 import rateLimit from "@fastify/rate-limit";
 import { apiConfig, securityConfig } from "@cnbs/config";
-import { adminRoutes } from "./routes/admin";
-import { healthRoutes } from "./routes/health";
-import { publicRoutes } from "./routes/public";
-import { runtimeMetrics } from "./services/runtime-metrics";
+import { adminRoutes } from "./routes/admin/index.js";
+import { healthRoutes } from "./routes/health/index.js";
+import { publicRoutes } from "./routes/public/index.js";
+import { runtimeMetrics } from "./services/runtime-metrics.js";
 
 declare module "fastify" {
   interface FastifyRequest {
@@ -57,7 +57,16 @@ export function buildApp() {
   });
 
   app.setErrorHandler((error, request, reply) => {
-    request.log.error({ err: error }, "request_failed");
+    request.log.error(
+      {
+        err: error,
+        method: request.method,
+        url: request.url,
+        route: request.routeOptions.url,
+        requestId: request.id
+      },
+      "request_failed"
+    );
     void reply.code(500).send({
       error: {
         message: "Internal server error.",

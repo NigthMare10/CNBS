@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createSignedToken } from "@cnbs/domain";
 import { LocalStorageRepository } from "@cnbs/etl";
 import { IngestionService } from "@cnbs/etl";
-import { buildApp } from "./app";
+import { buildApp } from "./app.js";
 
 const workbookFixtures = {
   premiums: resolve(process.cwd(), "..", "..", "packages", "testing", "fixtures", "workbooks", "primas.xlsx"),

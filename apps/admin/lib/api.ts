@@ -18,27 +18,39 @@ export function buildAdminApiHeaders(session: AdminSession) {
 }
 
 export async function getAdminJson<T>(path: string, session: AdminSession): Promise<T> {
-  const response = await fetch(`${apiConfig.baseUrl}${path}`, {
-    headers: buildAdminApiHeaders(session),
-    cache: "no-store"
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${apiConfig.baseUrl}${path}`, {
+      headers: buildAdminApiHeaders(session),
+      cache: "no-store"
+    });
+  } catch (error) {
+    throw new Error(`Admin request failed before response: ${path} via ${apiConfig.baseUrl}`, { cause: error });
+  }
 
   if (!response.ok) {
-    throw new Error(`Admin request failed: ${path}`);
+    throw new Error(`Admin request failed: ${path} via ${apiConfig.baseUrl} (${response.status})`);
   }
 
   return (await response.json()) as T;
 }
 
 export async function postAdminJson<T>(path: string, session: AdminSession): Promise<T> {
-  const response = await fetch(`${apiConfig.baseUrl}${path}`, {
-    method: "POST",
-    headers: buildAdminApiHeaders(session),
-    cache: "no-store"
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${apiConfig.baseUrl}${path}`, {
+      method: "POST",
+      headers: buildAdminApiHeaders(session),
+      cache: "no-store"
+    });
+  } catch (error) {
+    throw new Error(`Admin POST failed before response: ${path} via ${apiConfig.baseUrl}`, { cause: error });
+  }
 
   if (!response.ok) {
-    throw new Error(`Admin POST failed: ${path}`);
+    throw new Error(`Admin POST failed: ${path} via ${apiConfig.baseUrl} (${response.status})`);
   }
 
   return (await response.json()) as T;

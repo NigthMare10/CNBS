@@ -1,5 +1,27 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalEnv": [
+    "CNBS_PUBLIC_API_BASE_URL",
+    "CNBS_STORAGE_ROOT",
+    "CNBS_DISPLAY_TIME_ZONE",
+    "CNBS_DISPLAY_LOCALE",
+    "CNBS_AUTH_MODE",
+    "CNBS_ADMIN_USER",
+    "CNBS_ADMIN_PASSWORD",
+    "CNBS_ADMIN_ROLE",
+    "CNBS_ADMIN_API_SECRET",
+    "CNBS_OIDC_ISSUER_URL",
+    "CNBS_OIDC_CLIENT_ID",
+    "CNBS_OIDC_CLIENT_SECRET",
+    "CNBS_OIDC_REDIRECT_URI",
+    "CNBS_OIDC_SCOPES",
+    "CNBS_OIDC_POST_LOGOUT_REDIRECT_URI",
+    "VERCEL",
+    "VERCEL_ENV",
+    "VERCEL_URL",
+    "VERCEL_BRANCH_URL",
+    "VERCEL_PROJECT_PRODUCTION_URL"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],

@@ -2,7 +2,7 @@ import { mkdtemp, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { tmpdir } from "node:os";
 import { describe, expect, it } from "vitest";
-import { mapMultipartUploadsToInputs } from "./upload-filter";
+import { mapMultipartUploadsToInputs } from "./upload-filter.js";
 
 describe("mapMultipartUploadsToInputs", () => {
   it("filters out blob and zero-byte phantom uploads", async () => {

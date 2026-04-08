@@ -1,9 +1,9 @@
 import type { FastifyPluginAsync, FastifyReply } from "fastify";
 import { securityConfig } from "@cnbs/config";
-import { requireAdmin } from "../../services/auth";
-import { getIngestionService } from "../../services/container";
-import { runtimeMetrics } from "../../services/runtime-metrics";
-import { mapMultipartUploadsToInputs } from "../../services/upload-filter";
+import { requireAdmin } from "../../services/auth.js";
+import { getIngestionService } from "../../services/container.js";
+import { runtimeMetrics } from "../../services/runtime-metrics.js";
+import { mapMultipartUploadsToInputs } from "../../services/upload-filter.js";
 
 function paginationParams(query: { page?: string; pageSize?: string }) {
   const requestedPage = Number(query.page ?? 1);

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Analytics } from "@vercel/analytics/react";
 import { SiteFooter } from "../components/site-footer";
 import { SiteHeader } from "../components/site-header";
 import "./globals.css";
@@ -12,6 +13,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
           <div className="container public-stack">{children}</div>
         </main>
         <SiteFooter />
+        <Analytics />
       </body>
     </html>
   );

@@ -1,23 +1,29 @@
 import { apiConfig } from "@cnbs/config";
 
 export class PublicApiError extends Error {
-  constructor(readonly statusCode: number, path: string) {
-    super(`Failed to fetch ${path}`);
+  constructor(readonly statusCode: number, path: string, readonly baseUrl: string, options?: ErrorOptions) {
+    super(`Failed to fetch ${path} from ${baseUrl}`, options);
   }
 }
 
 async function readJson<T>(path: string): Promise<T>;
 async function readJson<T>(path: string, options: { allow404: true }): Promise<T | null>;
 async function readJson<T>(path: string, options?: { allow404?: boolean }): Promise<T | null> {
-  const response = await fetch(`${apiConfig.baseUrl}${path}`, {
-    next: { revalidate: 15 }
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${apiConfig.baseUrl}${path}`, {
+      next: { revalidate: 15 }
+    });
+  } catch (error) {
+    throw new PublicApiError(503, path, apiConfig.baseUrl, { cause: error });
+  }
 
   if (!response.ok) {
     if (options?.allow404 && response.status === 404) {
       return null;
     }
-    throw new PublicApiError(response.status, path);
+    throw new PublicApiError(response.status, path, apiConfig.baseUrl);
   }
 
   return (await response.json()) as T;

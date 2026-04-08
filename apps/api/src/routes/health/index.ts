@@ -1,6 +1,6 @@
 import type { FastifyPluginAsync } from "fastify";
-import { getIngestionService } from "../../services/container";
-import { runtimeMetrics } from "../../services/runtime-metrics";
+import { getIngestionService } from "../../services/container.js";
+import { runtimeMetrics } from "../../services/runtime-metrics.js";
 
 export const healthRoutes: FastifyPluginAsync = async (fastify) => {
   await Promise.resolve();

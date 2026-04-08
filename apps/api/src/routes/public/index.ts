@@ -1,5 +1,5 @@
 import type { FastifyPluginAsync } from "fastify";
-import { getIngestionService } from "../../services/container";
+import { getIngestionService } from "../../services/container.js";
 
 function pagination<T>(items: T[], page = 1, pageSize = 25) {
   const safePage = Number.isFinite(page) ? Math.max(page, 1) : 1;
