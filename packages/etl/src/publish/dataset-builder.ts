@@ -8,6 +8,25 @@ export function buildDatasetArtifacts(input: {
   incomeStatementFacts: IncomeStatementFact[];
   datasetVersionId: string;
 }): CanonicalDatasetArtifacts {
+  function sortByMetric<T extends { institutionId: string; institutionName: string }>(
+    entries: T[],
+    getMetric: (entry: T) => number
+  ): T[] {
+    return [...entries].sort((left, right) => {
+      const metricDifference = getMetric(right) - getMetric(left);
+      if (metricDifference !== 0) {
+        return metricDifference;
+      }
+
+      const nameDifference = left.institutionName.localeCompare(right.institutionName, "es");
+      if (nameDifference !== 0) {
+        return nameDifference;
+      }
+
+      return left.institutionId.localeCompare(right.institutionId, "es");
+    });
+  }
+
   const institutionNameById = Object.fromEntries(
     institutionsCatalog.map((institution) => [institution.institutionId, institution.displayName])
   );
@@ -106,10 +125,10 @@ export function buildDatasetArtifacts(input: {
     premiumsByInstitution.map((entry) => [String(entry.institutionId), entry])
   );
   const rankings = {
-    premiums: premiumsByInstitution.slice(0, 12),
-    assets: [...financialHighlightsByInstitution].sort((left, right) => right.totalAssets - left.totalAssets),
-    equity: [...financialHighlightsByInstitution].sort((left, right) => right.equity - left.equity),
-    reserves: [...financialHighlightsByInstitution].sort((left, right) => right.totalReserves - left.totalReserves)
+    premiums: sortByMetric(premiumsByInstitution, (entry) => entry.premiumAmount).slice(0, 12),
+    assets: sortByMetric(financialHighlightsByInstitution, (entry) => entry.totalAssets).slice(0, 12),
+    equity: sortByMetric(financialHighlightsByInstitution, (entry) => entry.equity).slice(0, 12),
+    reserves: sortByMetric(financialHighlightsByInstitution, (entry) => entry.totalReserves).slice(0, 12)
   };
 
   const institutionDetails = Object.fromEntries(

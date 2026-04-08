@@ -5,6 +5,8 @@ import {
   fingerprintSourceFiles,
   institutionsCatalog,
   mergePublishability,
+  resolveInstitution,
+  slugKey,
   type AuditEvent,
   type DatasetVersionRecord,
   type MappingSummary,
@@ -44,6 +46,85 @@ function emitOperationalLog(event: string, payload: Record<string, unknown>): vo
       ...payload
     })
   );
+}
+
+type RankingEntry = Record<string, unknown> & {
+  institutionId?: string;
+  institutionName?: string;
+  premiumAmount?: number;
+  totalAssets?: number;
+  equity?: number;
+  totalReserves?: number;
+};
+
+function rankingMetricValue(entry: RankingEntry, key: "premiums" | "assets" | "equity" | "reserves"): number {
+  switch (key) {
+    case "premiums":
+      return Number(entry.premiumAmount ?? 0);
+    case "assets":
+      return Number(entry.totalAssets ?? 0);
+    case "equity":
+      return Number(entry.equity ?? 0);
+    case "reserves":
+      return Number(entry.totalReserves ?? 0);
+    default:
+      return 0;
+  }
+}
+
+function stableSortRankings(entries: RankingEntry[], key: "premiums" | "assets" | "equity" | "reserves"): RankingEntry[] {
+  return [...entries].sort((left, right) => {
+    const byMetric = rankingMetricValue(right, key) - rankingMetricValue(left, key);
+    if (byMetric !== 0) {
+      return byMetric;
+    }
+
+    const leftName = String(left.institutionName ?? left.institutionId ?? "");
+    const rightName = String(right.institutionName ?? right.institutionId ?? "");
+    const byName = leftName.localeCompare(rightName, "es");
+    if (byName !== 0) {
+      return byName;
+    }
+
+    return String(left.institutionId ?? "").localeCompare(String(right.institutionId ?? ""), "es");
+  });
+}
+
+function buildRankingsFromAggregates(input: { premiums: RankingEntry[]; financialHighlights: RankingEntry[] }) {
+  return {
+    premiums: stableSortRankings(input.premiums, "premiums").slice(0, 12),
+    assets: stableSortRankings(input.financialHighlights, "assets").slice(0, 12),
+    equity: stableSortRankings(input.financialHighlights, "equity").slice(0, 12),
+    reserves: stableSortRankings(input.financialHighlights, "reserves").slice(0, 12)
+  };
+}
+
+function resolveInstitutionRouteInput(value: string): string | null {
+  const trimmedValue = value.trim();
+  if (trimmedValue.length === 0) {
+    return null;
+  }
+
+  const exact = institutionsCatalog.find(
+    (institution) => institution.institutionId === trimmedValue || institution.canonicalCode === trimmedValue
+  );
+  if (exact) {
+    return exact.institutionId;
+  }
+
+  const aliasMatch = resolveInstitution(trimmedValue);
+  if (aliasMatch) {
+    return aliasMatch.institutionId;
+  }
+
+  const normalizedSlug = slugKey(trimmedValue);
+  const slugMatch = institutionsCatalog.find((institution) => {
+    return [institution.institutionId, institution.displayName, institution.canonicalName, institution.shortName].some(
+      (candidate) => slugKey(candidate) === normalizedSlug
+    );
+  });
+
+  return slugMatch?.institutionId ?? null;
 }
 
 function datasetScopeFromPrimarySources(input: {
@@ -659,17 +740,76 @@ export class IngestionService {
   async getPublicRankings() {
     const active = await this.storage.getActiveDatasetVersion();
     if (!active) {
-      return { premiums: [], assets: [], equity: [], netIncome: [] };
+      emitOperationalLog("rankings_source_resolved", {
+        activeDatasetVersionId: null,
+        source: "no-active-dataset"
+      });
+
+      return {
+        activeDataset: null,
+        domainAvailability: null,
+        rankings: { premiums: [], assets: [], equity: [], reserves: [] }
+      };
     }
 
     const cached = this.publicRankingsCache.get(active.datasetVersionId);
     if (cached) {
+      emitOperationalLog("rankings_source_resolved", {
+        activeDatasetVersionId: active.datasetVersionId,
+        source: "cache"
+      });
       return cached;
     }
 
-    const rankings = await this.readPublishedRecordArtifact(active.datasetVersionId, "aggregates/rankings.json");
-    this.publicRankingsCache.set(active.datasetVersionId, rankings);
-    return rankings;
+    const [artifactRankings, premiumsByInstitution, financialHighlights] = await Promise.all([
+      this.storage.readPublishedArtifactIfExists<Record<string, unknown>>(active.datasetVersionId, "aggregates/rankings.json"),
+      this.readPublishedArrayArtifact(active.datasetVersionId, "aggregates/premiums-by-institution.json"),
+      this.readPublishedArrayArtifact(active.datasetVersionId, "aggregates/financial-highlights.json")
+    ]);
+
+    const derivedRankings = buildRankingsFromAggregates({
+      premiums: premiumsByInstitution,
+      financialHighlights
+    });
+
+    const rankings = {
+      premiums:
+        Array.isArray(artifactRankings?.premiums) && artifactRankings.premiums.length > 0
+          ? stableSortRankings(artifactRankings.premiums as RankingEntry[], "premiums").slice(0, 12)
+          : derivedRankings.premiums,
+      assets:
+        Array.isArray(artifactRankings?.assets) && artifactRankings.assets.length > 0
+          ? stableSortRankings(artifactRankings.assets as RankingEntry[], "assets").slice(0, 12)
+          : derivedRankings.assets,
+      equity:
+        Array.isArray(artifactRankings?.equity) && artifactRankings.equity.length > 0
+          ? stableSortRankings(artifactRankings.equity as RankingEntry[], "equity").slice(0, 12)
+          : derivedRankings.equity,
+      reserves:
+        Array.isArray(artifactRankings?.reserves) && artifactRankings.reserves.length > 0
+          ? stableSortRankings(artifactRankings.reserves as RankingEntry[], "reserves").slice(0, 12)
+          : derivedRankings.reserves
+    };
+
+    const payload = {
+      activeDataset: this.toPublicDatasetMetadata(active),
+      domainAvailability: active.domainAvailability,
+      rankings
+    };
+
+    emitOperationalLog("rankings_source_resolved", {
+      activeDatasetVersionId: active.datasetVersionId,
+      source:
+        artifactRankings &&
+        [artifactRankings.premiums, artifactRankings.assets, artifactRankings.equity, artifactRankings.reserves].some(
+          (value) => Array.isArray(value) && value.length > 0
+        )
+          ? "published-artifact"
+          : "derived-aggregates"
+    });
+
+    this.publicRankingsCache.set(active.datasetVersionId, payload);
+    return payload;
   }
 
   async getPublicPremiumsByInstitution() {
@@ -711,12 +851,35 @@ export class IngestionService {
   async getPublicInstitutionDetail(institutionId: string) {
     const active = await this.storage.getActiveDatasetVersion();
     if (!active) {
+      emitOperationalLog("institution_detail_resolved", {
+        requestedInstitution: institutionId,
+        resolvedInstitutionId: null,
+        activeDatasetVersionId: null,
+        result: "no-active-dataset"
+      });
       return null;
     }
 
-    const cacheKey = `${active.datasetVersionId}:${institutionId}`;
+    const resolvedInstitutionId = resolveInstitutionRouteInput(institutionId);
+    if (!resolvedInstitutionId) {
+      emitOperationalLog("institution_detail_resolved", {
+        requestedInstitution: institutionId,
+        resolvedInstitutionId: null,
+        activeDatasetVersionId: active.datasetVersionId,
+        result: "institution-not-found"
+      });
+      return null;
+    }
+
+    const cacheKey = `${active.datasetVersionId}:${resolvedInstitutionId}`;
     const cached = this.publicInstitutionDetailCache.get(cacheKey);
     if (cached) {
+      emitOperationalLog("institution_detail_resolved", {
+        requestedInstitution: institutionId,
+        resolvedInstitutionId,
+        activeDatasetVersionId: active.datasetVersionId,
+        result: "cache"
+      });
       return cached;
     }
 
@@ -724,17 +887,23 @@ export class IngestionService {
       active.datasetVersionId,
       "catalogs/institutions.json"
     );
-    const institution = institutions.find((entry) => entry.institutionId === institutionId);
+    const institution = institutions.find((entry) => entry.institutionId === resolvedInstitutionId);
 
     if (!institution) {
+      emitOperationalLog("institution_detail_resolved", {
+        requestedInstitution: institutionId,
+        resolvedInstitutionId,
+        activeDatasetVersionId: active.datasetVersionId,
+        result: "catalog-miss"
+      });
       return null;
     }
 
     try {
-      const detail = await this.storage.readPublishedArtifactIfExists<Record<string, unknown>>(
-        active.datasetVersionId,
-        `aggregates/institutions/${institutionId}.json`
-      );
+        const detail = await this.storage.readPublishedArtifactIfExists<Record<string, unknown>>(
+          active.datasetVersionId,
+          `aggregates/institutions/${resolvedInstitutionId}.json`
+        );
       if (!detail) {
         throw new Error("institution-detail-missing");
       }
@@ -744,6 +913,12 @@ export class IngestionService {
         datasetScope: active.datasetScope
       };
       this.publicInstitutionDetailCache.set(cacheKey, payload);
+      emitOperationalLog("institution_detail_resolved", {
+        requestedInstitution: institutionId,
+        resolvedInstitutionId,
+        activeDatasetVersionId: active.datasetVersionId,
+        result: "published-artifact"
+      });
       return payload;
     } catch {
       const [premiumFacts, financialFacts, premiumsByInstitution, financialHighlights, incomeStatementHighlights] = await Promise.all([
@@ -755,28 +930,34 @@ export class IngestionService {
       ]);
 
       const institutionPremiumFacts = premiumFacts
-        .filter((fact) => fact.institutionId === institutionId)
+        .filter((fact) => fact.institutionId === resolvedInstitutionId)
         .slice(0, 20);
 
       const payload = {
         institution,
         premiumSummary: premiumsByInstitution.find(
-          (item) => item.institutionId === institutionId
+          (item) => item.institutionId === resolvedInstitutionId
         ),
         financialSummary: financialHighlights.find(
-          (item) => item.institutionId === institutionId
+          (item) => item.institutionId === resolvedInstitutionId
         ),
         incomeStatementSummary: incomeStatementHighlights.find(
-          (item) => item.institutionId === institutionId
+          (item) => item.institutionId === resolvedInstitutionId
         ),
         premiumFactsPreview: institutionPremiumFacts,
         financialFactsCount: financialFacts.filter(
-          (fact) => fact.institutionId === institutionId
+          (fact) => fact.institutionId === resolvedInstitutionId
         ).length,
         domainAvailability: active.domainAvailability,
         datasetScope: active.datasetScope
       };
       this.publicInstitutionDetailCache.set(cacheKey, payload);
+      emitOperationalLog("institution_detail_resolved", {
+        requestedInstitution: institutionId,
+        resolvedInstitutionId,
+        activeDatasetVersionId: active.datasetVersionId,
+        result: "fallback-derived"
+      });
       return payload;
     }
   }

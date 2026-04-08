@@ -1,4 +1,4 @@
-import { mkdtemp, writeFile } from "node:fs/promises";
+import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { resolve } from "node:path";
@@ -280,6 +280,31 @@ describe("IngestionService", () => {
     const overview = await service.getPublicOverview();
     expect((overview.executiveKpis as Array<{ key: string }>).some((kpi) => kpi.key === "total-reserves")).toBe(true);
     expect((overview.executiveKpis as Array<{ key: string }>).some((kpi) => kpi.key === "total-net-income")).toBe(false);
+  }, 20000);
+
+  it("derives rankings from published aggregates when rankings artifact is unavailable", async () => {
+    const run = await service.ingestWorkbookSet({
+      uploadedBy: "tester",
+      files: [
+        fixtureFile("premiums", "primas.xlsx", 12979),
+        fixtureFile("financialPosition", "estado_situacion_financiera.xlsx", 21236),
+        fixtureFile("reference", "informe_financiero_referencia.xlsx", 453545)
+      ]
+    });
+
+    const published = await service.publishStagedRun(run.ingestionRunId, "tester");
+    await rm(join(storagePaths.published, published.datasetVersionId, "aggregates", "rankings.json"), { force: true });
+
+    const rankings = (await service.getPublicRankings()) as {
+      rankings: { premiums: Array<Record<string, unknown>>; assets: Array<Record<string, unknown>>; equity: Array<Record<string, unknown>>; reserves: Array<Record<string, unknown>> };
+      activeDataset: { datasetVersionId?: string };
+    };
+
+    expect(rankings.activeDataset.datasetVersionId).toBe(published.datasetVersionId);
+    expect(rankings.rankings.premiums.length).toBeGreaterThan(0);
+    expect(rankings.rankings.assets.length).toBeGreaterThan(0);
+    expect(rankings.rankings.equity.length).toBeGreaterThan(0);
+    expect(rankings.rankings.reserves.length).toBeGreaterThan(0);
   }, 20000);
 
   it("blocks a reference-only upload because no primary source is present", async () => {

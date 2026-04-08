@@ -21,10 +21,13 @@ async function readJson<T>(path: string, options?: { allow404?: boolean }): Prom
 
   if (!response.ok) {
     if (options?.allow404 && response.status === 404) {
+      console.info(JSON.stringify({ event: "public_fetch_completed", path, baseUrl: apiConfig.baseUrl, status: response.status }));
       return null;
     }
     throw new PublicApiError(response.status, path, apiConfig.baseUrl);
   }
+
+  console.info(JSON.stringify({ event: "public_fetch_completed", path, baseUrl: apiConfig.baseUrl, status: response.status }));
 
   return (await response.json()) as T;
 }

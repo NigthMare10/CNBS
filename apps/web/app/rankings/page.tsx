@@ -12,12 +12,14 @@ function stringValue(value: unknown, fallback = ""): string {
 }
 
 export default async function RankingsPage() {
-  const [rankings, versionPayload] = await Promise.all([
-    publicApi.rankings() as Promise<Record<string, Array<Record<string, unknown>>>>,
-    publicApi.version() as Promise<{ activeDataset?: Record<string, unknown> }>
-  ]);
-  const activeDataset = versionPayload.activeDataset;
-  const domainAvailability = (versionPayload.activeDataset?.domainAvailability as Record<string, Record<string, unknown>> | undefined) ?? {};
+  const rankingsPayload = (await publicApi.rankings()) as {
+    activeDataset?: Record<string, unknown> | null;
+    domainAvailability?: Record<string, Record<string, unknown>> | null;
+    rankings?: Record<string, Array<Record<string, unknown>>>;
+  };
+  const activeDataset = rankingsPayload.activeDataset ?? null;
+  const rankings = rankingsPayload.rankings ?? {};
+  const domainAvailability = rankingsPayload.domainAvailability ?? {};
   const financialAvailable = domainAvailability.financialPosition?.publishable === true;
   const rankingGroups = [
     { key: "premiums", title: "Primas", description: "Posición por primas oficiales publicadas." },

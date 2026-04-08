@@ -33,6 +33,16 @@ export async function getAdminJson<T>(path: string, session: AdminSession): Prom
     throw new Error(`Admin request failed: ${path} via ${apiConfig.baseUrl} (${response.status})`);
   }
 
+  console.info(
+    JSON.stringify({
+      event: "admin_fetch_completed",
+      path,
+      baseUrl: apiConfig.baseUrl,
+      status: response.status,
+      method: "GET"
+    })
+  );
+
   return (await response.json()) as T;
 }
 
@@ -52,6 +62,16 @@ export async function postAdminJson<T>(path: string, session: AdminSession): Pro
   if (!response.ok) {
     throw new Error(`Admin POST failed: ${path} via ${apiConfig.baseUrl} (${response.status})`);
   }
+
+  console.info(
+    JSON.stringify({
+      event: "admin_fetch_completed",
+      path,
+      baseUrl: apiConfig.baseUrl,
+      status: response.status,
+      method: "POST"
+    })
+  );
 
   return (await response.json()) as T;
 }
