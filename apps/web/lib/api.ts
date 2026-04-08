@@ -13,7 +13,7 @@ async function readJson<T>(path: string, options?: { allow404?: boolean }): Prom
 
   try {
     response = await fetch(`${apiConfig.baseUrl}${path}`, {
-      next: { revalidate: 15 }
+      cache: "no-store"
     });
   } catch (error) {
     throw new PublicApiError(503, path, apiConfig.baseUrl, { cause: error });

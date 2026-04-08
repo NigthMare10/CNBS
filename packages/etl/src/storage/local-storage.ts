@@ -1,7 +1,7 @@
-import { copyFile, cp, mkdir, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
+import { copyFile } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
-import { basename, dirname, join, resolve } from "node:path";
-import { bundledStorageRoot, storagePaths } from "@cnbs/config";
+import { basename, join } from "node:path";
+import { storagePaths } from "@cnbs/config";
 import type {
   AliasResolutionExample,
   AuditEvent,
@@ -14,63 +14,31 @@ import { datasetVersionRecordSchema } from "@cnbs/schemas";
 import type { z } from "zod";
 import type { CanonicalDatasetArtifacts, StagedIngestionRun, UploadedWorkbookInput } from "../types";
 import { sha256File } from "../security/hash";
-
-async function ensureDirectory(path: string): Promise<void> {
-  await mkdir(path, { recursive: true });
-}
+import {
+  deleteStorageTree,
+  ensureStorageDirectory,
+  getStoragePersistenceInfo,
+  readStorageJson,
+  seedStorageIfNeeded,
+  storageListEntries,
+  storagePathExists,
+  writeStorageJson
+} from "./persistence";
 
 async function writeJson(path: string, data: unknown): Promise<void> {
-  await ensureDirectory(dirname(path));
-  await writeFile(path, `${JSON.stringify(data, null, 2)}\n`, "utf8");
-}
-
-async function pathExists(path: string): Promise<boolean> {
-  try {
-    await stat(path);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function directoryHasEntries(path: string): Promise<boolean> {
-  try {
-    return (await readdir(path)).length > 0;
-  } catch {
-    return false;
-  }
-}
-
-async function seedWritableStorageIfNeeded(): Promise<void> {
-  if (!process.env.VERCEL || storagePaths.root === bundledStorageRoot) {
-    return;
-  }
-
-  if (!(await pathExists(bundledStorageRoot)) || (await directoryHasEntries(storagePaths.root))) {
-    return;
-  }
-
-  await ensureDirectory(storagePaths.root);
-
-  const entries = await readdir(bundledStorageRoot);
-  await Promise.all(
-    entries.map(async (entry) => {
-      await cp(join(bundledStorageRoot, entry), join(storagePaths.root, entry), { recursive: true, force: true });
-    })
-  );
+  await writeStorageJson(path, data);
 }
 
 async function listPublishedDatasetIds(): Promise<string[]> {
   try {
-    return (await readdir(storagePaths.published)).sort().reverse();
+    return (await storageListEntries(storagePaths.published)).sort().reverse();
   } catch {
     return [];
   }
 }
 
 async function readJson<T>(path: string): Promise<T> {
-  const value = JSON.parse(await readFile(path, "utf8")) as T;
-  return value;
+  return await readStorageJson<T>(path);
 }
 
 function isFileNotFound(error: unknown): boolean {
@@ -609,10 +577,30 @@ export class LocalStorageRepository {
   }
 
   async initialize(): Promise<void> {
-    await seedWritableStorageIfNeeded();
-    await Promise.all(Object.values(storagePaths).map((directoryPath) => ensureDirectory(directoryPath)));
+    await seedStorageIfNeeded();
+    await Promise.all(Object.values(storagePaths).map((directoryPath) => ensureStorageDirectory(directoryPath)));
     await this.ensureCacheStateFile();
     await this.ensureActivePointerConsistency();
+
+    const persistence = getStoragePersistenceInfo();
+    console.info(
+      JSON.stringify({
+        event: "storage_backend_ready",
+        root: storagePaths.root,
+        ...persistence
+      })
+    );
+
+    if (process.env.VERCEL && !persistence.durable) {
+      console.warn(
+        JSON.stringify({
+          event: "storage_backend_ephemeral",
+          root: storagePaths.root,
+          ...persistence,
+          message: "Vercel runtime is using ephemeral filesystem storage; configure BLOB_READ_WRITE_TOKEN for durable staging and publish state."
+        })
+      );
+    }
   }
 
   async storeUploadedWorkbook(input: UploadedWorkbookInput): Promise<SourceFileRecord> {
@@ -621,7 +609,7 @@ export class LocalStorageRepository {
     const targetPath = join(storagePaths.quarantine, storedFilename);
     await copyFile(input.filePath, targetPath);
 
-    return {
+    const storedFile: SourceFileRecord = {
       sourceFileId,
       kind: "unknown",
       originalFilename: sanitizeOriginalFilename(input.originalFilename),
@@ -632,6 +620,19 @@ export class LocalStorageRepository {
       detectedSignature: "pending",
       uploadedAt: new Date().toISOString()
     };
+
+    console.info(
+      JSON.stringify({
+        event: "upload_stored",
+        sourceFileId,
+        storedFilename,
+        originalFilename: storedFile.originalFilename,
+        sizeBytes: storedFile.sizeBytes,
+        storage: getStoragePersistenceInfo()
+      })
+    );
+
+    return storedFile;
   }
 
   quarantineFilePath(storedFilename: string): string {
@@ -660,7 +661,7 @@ export class LocalStorageRepository {
       return Array.from(this.stagingRunCache.values());
     }
 
-    const entries = await readdir(storagePaths.staging);
+    const entries = await storageListEntries(storagePaths.staging);
     const runs = await Promise.all(
       entries.filter((entry) => entry.endsWith(".json")).map(async (entry) => await readJson<StagedIngestionRun>(join(storagePaths.staging, entry)))
     );
@@ -674,7 +675,7 @@ export class LocalStorageRepository {
     artifacts: CanonicalDatasetArtifacts;
   }): Promise<void> {
     const versionPath = join(storagePaths.published, input.datasetVersion.datasetVersionId);
-    await ensureDirectory(versionPath);
+    await ensureStorageDirectory(versionPath);
 
     const metadata = input.datasetVersion;
     const manifest = {
@@ -736,6 +737,14 @@ export class LocalStorageRepository {
 
     await writeJson(join(storagePaths.active, "active-dataset.json"), pointer);
     await this.writeCacheNamespaceState(datasetVersionId);
+    console.info(
+      JSON.stringify({
+        event: "active_dataset_updated",
+        datasetVersionId,
+        updatedAt: pointer.updatedAt,
+        storage: getStoragePersistenceInfo()
+      })
+    );
   }
 
   async getActiveDatasetPointer(): Promise<ActiveDatasetPointer> {
@@ -826,7 +835,7 @@ export class LocalStorageRepository {
   }
 
   async listPublishedDatasetVersions(): Promise<DatasetVersionRecord[]> {
-    const entries = await readdir(storagePaths.published);
+    const entries = await storageListEntries(storagePaths.published);
     const versions = await Promise.all(
       entries.map(async (entry) => {
         try {
@@ -851,7 +860,7 @@ export class LocalStorageRepository {
       return Array.from(this.auditEventCache.values());
     }
 
-    const entries = await readdir(storagePaths.audit);
+    const entries = await storageListEntries(storagePaths.audit);
     const events = await Promise.all(
       entries.filter((entry) => entry.endsWith(".json")).map(async (entry) => await readJson<AuditEvent>(join(storagePaths.audit, entry)))
     );
@@ -861,7 +870,7 @@ export class LocalStorageRepository {
   }
 
   async clearStorage(): Promise<void> {
-    await rm(storagePaths.root, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 });
+    await deleteStorageTree(storagePaths.root);
     this.invalidateProcessCaches("storage-cleared", createBootstrapCacheNamespaceState());
     await this.initialize();
     await writeJson(join(storagePaths.active, "active-dataset.json"), {
@@ -874,10 +883,10 @@ export class LocalStorageRepository {
   async getOperationalMetrics() {
     await this.syncCacheNamespace(true);
     const [quarantineEntries, stagingEntries, publishedEntries, auditEntries] = await Promise.all([
-      readdir(storagePaths.quarantine),
-      readdir(storagePaths.staging),
-      readdir(storagePaths.published),
-      readdir(storagePaths.audit)
+      storageListEntries(storagePaths.quarantine),
+      storageListEntries(storagePaths.staging),
+      storageListEntries(storagePaths.published),
+      storageListEntries(storagePaths.audit)
     ]);
 
     return {
@@ -890,6 +899,7 @@ export class LocalStorageRepository {
         artifactCacheEntries: this.artifactCache.size
       },
       storage: {
+        ...getStoragePersistenceInfo(),
         quarantineCount: quarantineEntries.length,
         stagingCount: stagingEntries.filter((entry) => entry.endsWith(".json")).length,
         publishedCount: publishedEntries.length,
@@ -899,11 +909,6 @@ export class LocalStorageRepository {
   }
 
   async fileExists(path: string): Promise<boolean> {
-    try {
-      await stat(resolve(path));
-      return true;
-    } catch {
-      return false;
-    }
+    return await storagePathExists(path);
   }
 }

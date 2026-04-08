@@ -110,24 +110,71 @@ export const adminRoutes: FastifyPluginAsync = async (fastify) => {
     if (reply.sent) return;
 
     const service = await getIngestionService();
-    const files = await request.saveRequestFiles();
-    const uploadedFiles = await mapMultipartUploadsToInputs(files);
+    request.log.info(
+      {
+        requestId: request.id,
+        actor: request.adminContext?.user ?? "unknown"
+      },
+      "upload_started"
+    );
 
-    if (uploadedFiles.length === 0) {
-      return reply.code(400).send({
-        error: {
-          message: "No valid workbook files were provided.",
-          requestId: request.id
-        }
+    try {
+      const files = await request.saveRequestFiles();
+      request.log.info(
+        {
+          requestId: request.id,
+          fileCount: files.length,
+          filenames: files.map((file) => file.filename)
+        },
+        "upload_received"
+      );
+
+      const uploadedFiles = await mapMultipartUploadsToInputs(files);
+      request.log.info(
+        {
+          requestId: request.id,
+          acceptedFileCount: uploadedFiles.length,
+          filenames: uploadedFiles.map((file) => file.originalFilename)
+        },
+        "upload_validated"
+      );
+
+      if (uploadedFiles.length === 0) {
+        return reply.code(400).send({
+          error: {
+            message: "No valid workbook files were provided.",
+            requestId: request.id
+          }
+        });
+      }
+
+      const run = await service.ingestWorkbookSet({
+        uploadedBy: request.adminContext?.user ?? "unknown",
+        files: uploadedFiles
       });
+
+      request.log.info(
+        {
+          requestId: request.id,
+          ingestionRunId: run.ingestionRunId,
+          publicationState: run.publicationState,
+          publishability: run.validationSummary.publishability
+        },
+        "upload_stored"
+      );
+
+      return reply.code(201).send(run);
+    } catch (error) {
+      request.log.error(
+        {
+          err: error,
+          requestId: request.id,
+          actor: request.adminContext?.user ?? "unknown"
+        },
+        "upload_failed"
+      );
+      throw error;
     }
-
-    const run = await service.ingestWorkbookSet({
-      uploadedBy: request.adminContext?.user ?? "unknown",
-      files: uploadedFiles
-    });
-
-    return reply.code(201).send(run);
   });
 
   fastify.post("/publications/:ingestionRunId/publish", {

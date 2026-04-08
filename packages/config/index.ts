@@ -7,7 +7,7 @@ function isVercelEnvironment(): boolean {
 }
 
 function defaultStorageRoot(): string {
-  return process.env.CNBS_STORAGE_ROOT ?? (process.env.VERCEL ? "/tmp/cnbs-storage" : "./storage");
+  return process.env.CNBS_STORAGE_ROOT ?? (process.env.VERCEL ? "/tmp/cnbs-storage" : "./.cnbs-storage");
 }
 
 function normalizeUrl(input: string): string {

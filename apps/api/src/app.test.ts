@@ -1,9 +1,8 @@
-import { resolve } from "node:path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createSignedToken } from "@cnbs/domain";
-import { LocalStorageRepository } from "@cnbs/etl";
-import { IngestionService } from "@cnbs/etl";
-import { buildApp } from "./app.js";
 
 const workbookFixtures = {
   premiums: resolve(process.cwd(), "..", "..", "packages", "testing", "fixtures", "workbooks", "primas.xlsx"),
@@ -29,16 +28,27 @@ const workbookFixtures = {
   )
 };
 
-const storage = new LocalStorageRepository();
-const service = new IngestionService(storage);
+let storage: import("@cnbs/etl").LocalStorageRepository;
+let service: import("@cnbs/etl").IngestionService;
+let buildApp: typeof import("./app.js").buildApp;
+let testStorageRoot: string;
 
 vi.mock("./services/container", () => ({
   getIngestionService: () => Promise.resolve(service)
 }));
 
-describe("API integration", () => {
+describe.sequential("API integration", () => {
   beforeEach(async () => {
-    await storage.clearStorage();
+    testStorageRoot = await mkdtemp(join(tmpdir(), "cnbs-api-test-"));
+    process.env.CNBS_STORAGE_ROOT = testStorageRoot;
+    vi.resetModules();
+
+    const [{ LocalStorageRepository, IngestionService }, appModule] = await Promise.all([import("@cnbs/etl"), import("./app.js")]);
+    storage = new LocalStorageRepository();
+    service = new IngestionService(storage);
+    buildApp = appModule.buildApp;
+    await service.initialize();
+
     const run = await service.ingestWorkbookSet({
       uploadedBy: "tester",
       files: [
@@ -63,6 +73,11 @@ describe("API integration", () => {
       ]
     });
     await service.publishStagedRun(run.ingestionRunId, "tester");
+  }, 20000);
+
+  afterEach(async () => {
+    delete process.env.CNBS_STORAGE_ROOT;
+    await rm(testStorageRoot, { recursive: true, force: true });
   });
 
   it("serves active version metadata from the public API", async () => {
@@ -112,6 +127,36 @@ describe("API integration", () => {
     expect(response.statusCode).toBe(200);
     expect(payload.latestTextQuality?.mappingSummary?.unresolvedAliases).toBe(0);
     expect(payload.activeTextQuality?.mappingSummary?.unresolvedAliases).toBe(0);
+    await app.close();
+  }, 20000);
+
+  it("lists staged ingestions with pagination metadata", async () => {
+    const app = buildApp();
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/admin/ingestions?page=1&pageSize=1",
+      headers: {
+        "x-cnbs-admin-secret": "local-dev-secret",
+        "x-cnbs-admin-auth": createSignedToken(
+          {
+            user: "tester",
+            role: "admin",
+            iat: Math.floor(Date.now() / 1000),
+            exp: Math.floor(Date.now() / 1000) + 300
+          },
+          "local-dev-secret:service"
+        )
+      }
+    });
+    const payload: { items?: unknown[]; page?: number; pageSize?: number; total?: number; totalPages?: number } = response.json();
+
+    expect(response.statusCode).toBe(200);
+    expect(Array.isArray(payload.items)).toBe(true);
+    expect(payload.items).toHaveLength(1);
+    expect(payload.page).toBe(1);
+    expect(payload.pageSize).toBe(1);
+    expect(payload.total).toBeGreaterThanOrEqual(1);
+    expect(payload.totalPages).toBeGreaterThanOrEqual(1);
     await app.close();
   }, 20000);
 
