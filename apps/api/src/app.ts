@@ -1,10 +1,11 @@
+import type { IncomingMessage, ServerResponse } from "node:http";
 import Fastify from "fastify";
 import compress from "@fastify/compress";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import multipart from "@fastify/multipart";
 import rateLimit from "@fastify/rate-limit";
-import { apiConfig, securityConfig } from "@cnbs/config";
+import { apiConfig, authConfig, bundledStorageRoot, env, publicProjectUrl, securityConfig, storagePaths } from "@cnbs/config";
 import { adminRoutes } from "./routes/admin/index.js";
 import { healthRoutes } from "./routes/health/index.js";
 import { publicRoutes } from "./routes/public/index.js";
@@ -103,4 +104,40 @@ export function buildApp() {
   void app.register(adminRoutes, { prefix: "/api/admin" });
 
   return app;
+}
+
+export const app = buildApp();
+export const appReady = Promise.resolve(app.ready()).then(() => undefined);
+
+let startupLogged = false;
+
+export function logRuntimeStartup(): void {
+  if (startupLogged) {
+    return;
+  }
+
+  startupLogged = true;
+  app.log.info(
+    {
+      vercel: Boolean(process.env.VERCEL),
+      vercelEnv: process.env.VERCEL_ENV ?? null,
+      vercelUrl: process.env.VERCEL_URL ?? null,
+      publicProjectUrl,
+      apiBaseUrl: apiConfig.baseUrl,
+      authMode: authConfig.mode,
+      storageRoot: storagePaths.root,
+      bundledStorageRoot,
+      hasExplicitStorageRoot: Boolean(process.env.CNBS_STORAGE_ROOT),
+      hasExplicitApiBaseUrl: Boolean(process.env.CNBS_PUBLIC_API_BASE_URL),
+      adminUserConfigured: env.CNBS_ADMIN_USER,
+      port: apiConfig.port
+    },
+    "cnbs_api_runtime_ready"
+  );
+}
+
+export default async function handler(request: IncomingMessage, response: ServerResponse): Promise<void> {
+  await appReady;
+  logRuntimeStartup();
+  app.server.emit("request", request, response);
 }
